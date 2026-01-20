@@ -1,8 +1,6 @@
 spring:
   application:
     name: courier-back
-  profiles:
-    active: ${SPRING_PROFILES_ACTIVE:prod}
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:postgres}
     username: ${DB_USER}

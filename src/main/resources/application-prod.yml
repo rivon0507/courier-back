@@ -1,0 +1,33 @@
+logging:
+  structured:
+    format:
+      console: logstash
+
+  level:
+    root: INFO
+
+    io.github.rivon0507: INFO
+
+    org.springframework: WARN
+    org.springframework.web: WARN
+    org.apache.catalina: WARN
+    org.apache.coyote: WARN
+
+    org.flywaydb: INFO
+
+    org.hibernate.SQL: OFF
+    org.hibernate.orm.jdbc.bind: OFF
+    org.hibernate.type.descriptor.sql: OFF
+    com.zaxxer.hikari: INFO
+
+    org.springframework.security: WARN
+    org.springframework.security.web.access: INFO
+    org.springframework.security.oauth2: WARN
+
+server:
+  tomcat:
+    basedir: /tmp/tomcat
+    accesslog:
+      enabled: true
+      pattern: '%h %l %u %t "%r" %s %b %D'
+      max-days: 14

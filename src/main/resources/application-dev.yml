@@ -1,0 +1,42 @@
+spring:
+  web:
+    error:
+      include-message: always
+      include-binding-errors: always
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    metrics:
+      export:
+        enabled: false
+
+logging:
+  pattern:
+    correlation: "[%-8.8X{traceId}] "
+  level:
+    root: INFO
+
+    io.github.rivon0507: DEBUG
+
+    org.springframework.web: INFO
+    org.springframework.web.servlet.DispatcherServlet: WARN
+    org.apache.catalina: WARN
+    org.apache.coyote: WARN
+
+    org.flywaydb: INFO
+
+    org.hibernate.SQL: OFF
+    org.hibernate.orm.jdbc.bind: OFF
+    org.hibernate.type.descriptor.sql: OFF
+    org.hibernate.engine.transaction.internal: WARN
+    org.hibernate.tool.schema: WARN
+    com.zaxxer.hikari: INFO
+
+    org.springframework.security: INFO
+    org.springframework.security.web.authentication: INFO
+    org.springframework.security.web.access: INFO
+
+    org.springframework.security.oauth2: INFO

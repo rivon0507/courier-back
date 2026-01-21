@@ -1,13 +1,13 @@
-package io.github.rivon0507.courierback;
+package io.github.rivon0507.courier;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class CourierBackApplication {
+public class CourierApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(CourierBackApplication.class, args);
+        SpringApplication.run(CourierApplication.class, args);
     }
 
 }

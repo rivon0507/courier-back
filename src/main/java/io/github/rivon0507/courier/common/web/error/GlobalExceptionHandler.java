@@ -1,4 +1,4 @@
-package io.github.rivon0507.courierback.exception;
+package io.github.rivon0507.courier.common.web.error;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;

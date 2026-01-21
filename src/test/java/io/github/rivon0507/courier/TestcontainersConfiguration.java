@@ -1,4 +1,4 @@
-package io.github.rivon0507.courierback;
+package io.github.rivon0507.courier;
 
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;

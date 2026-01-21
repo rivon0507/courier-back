@@ -69,7 +69,7 @@ Use these subpackages (only create what’s needed):
 **Mapping rule:**
 
 - Mapping from entity to DTO should use mapstruct where possible
-- Mapper classes are put in `application` (e.g., `EnvoiServiceMapper`), not in `web`.
+- Mapper classes are put in `application` (e.g., `EnvoiMapper`), not in `web`.
 
 ---
 

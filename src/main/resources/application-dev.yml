@@ -3,6 +3,12 @@ spring:
     error:
       include-message: always
       include-binding-errors: always
+  sql:
+    init:
+      mode: always
+      data-locations: classpath:db/seed/seed-data.sql
+  flyway:
+    clean-disabled: false
 
 management:
   tracing:

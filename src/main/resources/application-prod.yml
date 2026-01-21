@@ -31,3 +31,7 @@ server:
       enabled: true
       pattern: '%h %l %u %t "%r" %s %b %D'
       max-days: 14
+
+spring:
+  flyway:
+    clean-disabled: true

@@ -71,12 +71,12 @@ tasks.named('test') {
 flyway {
     url = 'jdbc:postgresql://%s:%s/%s'
             .formatted(
-                    env.DB_HOST.value,
-                    env.DB_PORT.value,
-                    env.DB_NAME.value
+                    env.DB_HOST.orElse(""),
+                    env.DB_PORT.orElse(""),
+                    env.DB_NAME.orElse("")
             )
-    user = env.DB_USER.value
-    password = env.DB_PASSWORD.value
+    user = env.DB_USER.orElse("")
+    password = env.DB_PASSWORD.orElse("")
     locations = ['classpath:db/migration']
     cleanDisabled = false
 }

@@ -46,3 +46,9 @@ logging:
     org.springframework.security.web.access: INFO
 
     org.springframework.security.oauth2: INFO
+
+app:
+  security:
+    cors:
+      allowed-origins:
+        - http://localhost:4200

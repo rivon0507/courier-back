@@ -43,6 +43,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
     implementation 'org.flywaydb:flyway-database-postgresql'
     implementation 'org.springframework.boot:spring-boot-starter-opentelemetry'
+    implementation 'org.bouncycastle:bcpkix-jdk18on:1.83'
     implementation platform('me.paulschwarz:spring-dotenv-bom:5.1.0')
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'me.paulschwarz:springboot4-dotenv'

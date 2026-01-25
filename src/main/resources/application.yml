@@ -22,3 +22,9 @@ server:
   port: ${APP_PORT:8080}
   servlet:
     context-path: /api
+
+app:
+  security:
+    jwt:
+      public-key-path: ${JWT_PUBLIC_KEY_PATH:}
+      private-key-path: ${JWT_PRIVATE_KEY_PATH:}

@@ -54,7 +54,10 @@ public class SecurityConfiguration {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/actuator/health").permitAll()
+                        .requestMatchers(
+                                "/actuator/health",
+                                "/auth/login"
+                        ).permitAll()
                         .requestMatchers("/_security/ping").authenticated()
                         .anyRequest().denyAll()
                 )

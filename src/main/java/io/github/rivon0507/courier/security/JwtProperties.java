@@ -3,21 +3,14 @@ package io.github.rivon0507.courier.security;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * Configuration properties for JWT key file locations.
- * <p>
- * Maps properties under {@code app.security.jwt}:
- * - {@code public-key-path} -> {@code publicKeyPath}
- * - {@code private-key-path} -> {@code privateKeyPath}
+ * Configuration properties holder for JWT-related settings. Bound to properties under the prefix `app.security.jwt`.
  *
- * Expected values are paths to PEM-formatted key files (classpath or filesystem)
- * used to verify and sign JSON Web Tokens.
- *
- * @param publicKeyPath path to the PEM public key used to verify JWT signatures (classpath or filesystem)
- * @param privateKeyPath path to the PEM private key used to sign JWTs (classpath or filesystem)
+ * @param publicKeyUri: location (URI or classpath) of the JWT public key used to verify tokens.
+ * @param privateKeyUri: location (URI or classpath) of the JWT private key used to sign tokens.
  */
 @ConfigurationProperties(prefix = "app.security.jwt")
 public record JwtProperties (
-        String publicKeyPath,
-        String privateKeyPath
+        String publicKeyUri,
+        String privateKeyUri
 ) {
 }

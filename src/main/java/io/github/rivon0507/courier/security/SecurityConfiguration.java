@@ -11,6 +11,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -28,8 +30,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
@@ -65,17 +66,17 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    @ConditionalOnExpression("!'${app.security.jwt.public-key-path}'.isBlank()")
-    public JwtDecoder jwtDecoder(JwtProperties props) {
-        RSAPublicKey publicKey = readRsaPublicKey(props.publicKeyPath());
+    @ConditionalOnExpression("!'${app.security.jwt.public-key-uri}'.isBlank()")
+    public JwtDecoder jwtDecoder(JwtProperties props, ResourceLoader resourceLoader) {
+        RSAPublicKey publicKey = readRsaPublicKey(props.publicKeyUri(), resourceLoader);
         return NimbusJwtDecoder.withPublicKey(publicKey).build();
     }
 
     @Bean
-    @ConditionalOnExpression("!'${app.security.jwt.public-key-path}'.isBlank() && !'${app.security.jwt.private-key-path}'.isBlank()")
-    public JwtEncoder jwtEncoder(JwtProperties props) {
-        RSAPublicKey publicKey = readRsaPublicKey(props.publicKeyPath());
-        RSAPrivateKey privateKey = readRsaPrivateKey(props.privateKeyPath());
+    @ConditionalOnExpression("!'${app.security.jwt.public-key-uri}'.isBlank() && !'${app.security.jwt.private-key-uri}'.isBlank()")
+    public JwtEncoder jwtEncoder(JwtProperties props, ResourceLoader resourceLoader) {
+        RSAPublicKey publicKey = readRsaPublicKey(props.publicKeyUri(), resourceLoader);
+        RSAPrivateKey privateKey = readRsaPrivateKey(props.privateKeyUri(), resourceLoader);
 
         JWK jwk = new RSAKey.Builder(publicKey).privateKey(privateKey).keyID("courier-dev").build();
         JWKSet jwkSet = new JWKSet(jwk);
@@ -120,27 +121,25 @@ public class SecurityConfiguration {
         return source;
     }
 
-    private static RSAPublicKey readRsaPublicKey(String path) {
+    private static RSAPublicKey readRsaPublicKey(String location, ResourceLoader loader) {
+        Resource resource = loader.getResource(location);
         try {
-            String pem = Files.readString(Path.of(path));
+            String pem = resource.getContentAsString(StandardCharsets.UTF_8);
             RSAKey rsaKey = RSAKey.parseFromPEMEncodedObjects(pem).toRSAKey();
             return rsaKey.toRSAPublicKey();
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed reading public key from " + path, e);
-        } catch (JOSEException e) {
-            throw new IllegalStateException("Failed parsing public key from " + path, e);
+        } catch (IOException | JOSEException e) {
+            throw new IllegalStateException("Failed reading RSA public key from " + location, e);
         }
     }
 
-    private static RSAPrivateKey readRsaPrivateKey(String path) {
+    private static RSAPrivateKey readRsaPrivateKey(String location, ResourceLoader loader) {
+        Resource resource = loader.getResource(location);
         try {
-            String pem = Files.readString(Path.of(path));
+            String pem = resource.getContentAsString(StandardCharsets.UTF_8);
             RSAKey rsaKey = RSAKey.parseFromPEMEncodedObjects(pem).toRSAKey();
             return rsaKey.toRSAPrivateKey();
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed reading public key from " + path, e);
-        } catch (JOSEException e) {
-            throw new IllegalStateException("Failed parsing public key from " + path, e);
+        } catch (IOException | JOSEException e) {
+            throw new IllegalStateException("Failed loading RSA private key from " + location, e);
         }
     }
 }

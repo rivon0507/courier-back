@@ -65,10 +65,6 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-tasks.named('test') {
-    useJUnitPlatform()
-}
-
 flyway {
     url = 'jdbc:postgresql://%s:%s/%s'
             .formatted(
@@ -80,4 +76,53 @@ flyway {
     password = env.DB_PASSWORD.orElse("")
     locations = ['classpath:db/migration']
     cleanDisabled = false
+}
+
+import org.gradle.api.plugins.jvm.JvmTestSuite
+
+testing {
+    //noinspection GroovyAssignabilityCheck
+    suites {
+        test {
+            useJUnitJupiter()
+        }
+        //noinspection GroovyAssignabilityCheck
+        integrationTest(JvmTestSuite) {
+            useJUnitJupiter()
+
+            dependencies {
+                implementation project()
+            }
+
+            sources {
+                java {
+                    srcDirs = ['src/integrationTest/java']
+                }
+                //noinspection GroovyAssignabilityCheck
+                resources {
+                    srcDirs = ['src/integrationTest/resources']
+                }
+            }
+
+            targets {
+                all {
+                    testTask.configure {
+                        shouldRunAfter test
+                        systemProperty 'spring.profiles.active', 'test'
+                    }
+                }
+            }
+        }
+    }
+}
+
+configurations.named('integrationTestImplementation') {
+    extendsFrom configurations.testImplementation
+}
+configurations.named('integrationTestRuntimeOnly') {
+    extendsFrom configurations.testRuntimeOnly
+}
+
+tasks.named('check') {
+    dependsOn testing.suites.named('integrationTest')
 }

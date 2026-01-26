@@ -26,5 +26,5 @@ server:
 app:
   security:
     jwt:
-      public-key-path: ${JWT_PUBLIC_KEY_PATH:}
-      private-key-path: ${JWT_PRIVATE_KEY_PATH:}
+      public-key-uri: ${JWT_PUBLIC_KEY_URI:}
+      private-key-uri: ${JWT_PRIVATE_KEY_URI:}

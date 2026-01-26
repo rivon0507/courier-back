@@ -26,6 +26,7 @@ configurations {
     compileOnly {
         extendsFrom annotationProcessor
     }
+    mockitoAgent
 }
 
 repositories {
@@ -63,6 +64,9 @@ dependencies {
     testImplementation 'org.testcontainers:testcontainers-junit-jupiter'
     testImplementation 'org.testcontainers:testcontainers-postgresql'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    mockitoAgent('org.mockito:mockito-core') {
+        transitive = false
+    }
 }
 
 flyway {
@@ -121,6 +125,10 @@ configurations.named('integrationTestImplementation') {
 }
 configurations.named('integrationTestRuntimeOnly') {
     extendsFrom configurations.testRuntimeOnly
+}
+
+tasks.withType(Test).configureEach {
+    jvmArgs "-javaagent:${configurations.mockitoAgent.asPath}"
 }
 
 tasks.named('check') {

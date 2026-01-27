@@ -76,4 +76,8 @@ class AuthService {
 
         return jwtEncoder.encode(JwtEncoderParameters.from(claims.build()));
     }
+
+    public AuthenticationResponse register(String email, String password, String displayName) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
 }

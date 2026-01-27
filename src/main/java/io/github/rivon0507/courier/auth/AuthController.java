@@ -3,13 +3,13 @@ package io.github.rivon0507.courier.auth;
 import io.github.rivon0507.courier.auth.api.AuthenticationResponse;
 import io.github.rivon0507.courier.auth.api.LoginRequest;
 import io.github.rivon0507.courier.auth.api.RegisterRequest;
+import io.github.rivon0507.courier.auth.service.AuthService;
+import io.github.rivon0507.courier.auth.service.AuthSessionResult;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
@@ -39,5 +39,13 @@ class AuthController {
                 .toUri();
         return ResponseEntity.created(location)
                 .body(authenticationResponse);
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthenticationResponse> refreshSession(
+            @CookieValue(name = "refresh_token", required = false) @Nullable String refreshToken,
+            @CookieValue(name = "device_id", required = false) @Nullable String deviceId) {
+        AuthSessionResult result = authService.refreshSession(refreshToken, deviceId);
+        return ResponseEntity.ok(result.response());
     }
 }

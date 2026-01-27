@@ -1,5 +1,6 @@
-package io.github.rivon0507.courier.auth;
+package io.github.rivon0507.courier.auth.service;
 
+import io.github.rivon0507.courier.auth.UserMapper;
 import io.github.rivon0507.courier.auth.api.AuthenticationResponse;
 import io.github.rivon0507.courier.auth.web.error.UnauthorizedException;
 import io.github.rivon0507.courier.common.domain.Role;
@@ -10,6 +11,7 @@ import io.github.rivon0507.courier.security.AppUserPrincipal;
 import io.github.rivon0507.courier.security.JwtProperties;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -33,7 +35,7 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 @EnableConfigurationProperties({JwtProperties.class})
-class AuthService {
+public class AuthService {
 
     public static final String UNIQUE_EMAIL_CONSTRAINT = "uk_users_email";
     private final AuthenticationManager authenticationManager;
@@ -105,5 +107,9 @@ class AuthService {
                 .claim("name", principal.displayName());
 
         return jwtEncoder.encode(JwtEncoderParameters.from(claims.build()));
+    }
+
+    public AuthSessionResult refreshSession(@Nullable String refreshToken, @Nullable String deviceId) {
+        throw new UnsupportedOperationException("Not implemented");
     }
 }

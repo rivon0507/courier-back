@@ -28,7 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         """})
 @AutoConfigureMockMvc
 @Import(TestJwtConfiguration.class)
-@ActiveProfiles("test")
+@ActiveProfiles({"test"})
 public class SecuritySmokeTest {
     @Autowired
     private MockMvc mockMvc;

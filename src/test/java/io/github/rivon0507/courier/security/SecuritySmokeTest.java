@@ -1,6 +1,7 @@
 package io.github.rivon0507.courier.security;
 
 import io.github.rivon0507.courier.TestJwtConfiguration;
+import io.github.rivon0507.courier.common.persistence.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -10,6 +11,7 @@ import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
@@ -32,6 +34,8 @@ public class SecuritySmokeTest {
     private MockMvc mockMvc;
     @Autowired
     private JwtEncoder jwtEncoder;
+    @MockitoBean
+    UserRepository userRepository;
 
     @Test
     void unauthenticatedRequest__returns401() throws Exception {

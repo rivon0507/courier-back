@@ -59,7 +59,8 @@ public class SecurityConfiguration {
                         .requestMatchers(
                                 "/actuator/health",
                                 "/auth/login",
-                                "/auth/register"
+                                "/auth/register",
+                                "/auth/refresh"
                         ).permitAll()
                         .requestMatchers("/_security/ping").authenticated()
                         .anyRequest().denyAll()

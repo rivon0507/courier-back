@@ -7,25 +7,42 @@ import io.github.rivon0507.courier.auth.service.RefreshTokenHasher;
 import io.github.rivon0507.courier.common.domain.Role;
 import io.github.rivon0507.courier.common.domain.User;
 import io.github.rivon0507.courier.common.persistence.UserRepository;
+import org.apache.hc.client5.http.cookie.Cookie;
+import org.apache.hc.client5.http.cookie.CookieStore;
+import org.apache.hc.client5.http.impl.cookie.BasicClientCookie;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.client.RestTestClient;
+import org.springframework.transaction.support.TransactionTemplate;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatList;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
 @IntegrationTest
 public class AuthControllerIT {
+    private static final String VALID_DEVICE_ID = "693e5f1b-914b-49b7-8362-8855de4a5cf9";
+    @LocalServerPort
+    int serverPort;
     @Autowired
     private RestTestClient restClient;
     @Autowired
@@ -34,8 +51,14 @@ public class AuthControllerIT {
     private UserRepository userRepository;
     @Autowired
     private JdbcTemplate jdbcTemplate;
-    @LocalServerPort
-    int serverPort;
+    @Autowired
+    private RefreshTokenRepository refreshTokenRepository;
+    @Autowired
+    private RefreshTokenHasher refreshTokenHasher;
+    @Autowired
+    private CookieStore cookieStore;
+    @Autowired
+    private TransactionTemplate transactionTemplate;
 
     @Contract("_, _ -> new")
     private static AuthControllerIT.Case caseOf(String name, @Language("JSON") String body) {
@@ -44,6 +67,7 @@ public class AuthControllerIT {
 
     @BeforeEach
     void setUp() {
+        cookieStore.clear();
         var user = new User();
         user.setEmail("user@example.com");
         user.setDisplayName("User");
@@ -63,7 +87,7 @@ public class AuthControllerIT {
 
     @AfterEach
     void tearDown() {
-        jdbcTemplate.execute("TRUNCATE users RESTART IDENTITY CASCADE");
+        jdbcTemplate.execute("TRUNCATE users, refresh_tokens RESTART IDENTITY CASCADE");
     }
 
     private String assertAuthResponseAndExtractToken(RestTestClient.@NonNull BodyContentSpec body,
@@ -90,7 +114,51 @@ public class AuthControllerIT {
                 .expectBody(String.class).isEqualTo("pong");
     }
 
+    private void assertCookieStoreDoesNotContain(String cookieName) {
+        String description = "The %s cookie should have been cleared".formatted(cookieName);
+        assertThat(cookieStore.getCookies())
+                .as(description)
+                .filteredOn(c -> c.getName().equals(cookieName))
+                .isEmpty();
+    }
+
+    private RefreshToken findTokenByHash(String token) {
+        byte[] hash = refreshTokenHasher.hash(token);
+        return transactionTemplate.execute(status -> refreshTokenRepository.findByTokenHash(hash)
+                .orElseThrow(() -> new AssertionError("Expected token not found in repository")));
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private AuthResult refreshSession(String email, String displayName) {
+        AtomicReference<String> refreshToken = new AtomicReference<>();
+        var body = restClient.post().uri("/auth/refresh")
+
+                .exchange().expectStatus().isOk()
+                .expectCookie().exists("refresh_token")
+                .expectCookie().value("refresh_token", refreshToken::set)
+                .expectBody();
+        String accessToken = assertAuthResponseAndExtractToken(body, email, displayName);
+        return new AuthResult(refreshToken.get(), accessToken);
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private AuthResult login(String email, String password, String displayName) {
+        AtomicReference<String> refreshToken = new AtomicReference<>();
+        var body = restClient.post().uri("/auth/login")
+
+                .body(Map.of("email", email, "password", password))
+                .exchange().expectStatus().isOk()
+                .expectCookie().exists("refresh_token")
+                .expectCookie().value("refresh_token", refreshToken::set)
+                .expectBody();
+        String accessToken = assertAuthResponseAndExtractToken(body, email, displayName);
+        return new AuthResult(refreshToken.get(), accessToken);
+    }
+
     private record Case(String name, @Language("JSON") String body) {
+    }
+
+    private record AuthResult(String refreshToken, String accessToken) {
     }
 
     @Nested
@@ -123,7 +191,6 @@ public class AuthControllerIT {
             ).map(c ->
                     dynamicTest(c.name(), () -> restClient
                             .post().uri("/auth/login")
-
                             .body(c.body())
                             .exchange().expectStatus().isUnauthorized()
                     )
@@ -203,5 +270,328 @@ public class AuthControllerIT {
             String accessToken = assertAuthResponseAndExtractToken(body, "newuser@example.com", "New");
             assertTokenWorks(accessToken);
         }
+    }
+
+    @Nested
+    class RefreshSessionTests {
+        @Test
+        void refresh_with_malformed_device_id_returns_401_and_clears_both_cookies() {
+            login("user@example.com", "password", "User");
+            setCookie("device_id", "malformed");
+
+            restClient.post().uri("/auth/refresh")
+                    .exchange()
+                    .expectStatus().isUnauthorized()
+                    .expectBody()
+                    .jsonPath("$.code").isEqualTo("INVALID_SESSION");
+
+            assertCookieStoreDoesNotContain("refresh_token");
+            assertCookieStoreDoesNotContain("device_id");
+        }
+
+        @Nested
+        class HappyPath {
+
+            @Test
+            void login_then_refresh_rotates_once() {
+                AuthResult loginResult = login("user@example.com", "password", "User");
+                String loginDeviceId = getCookieFromStore("device_id").getValue();
+                AuthResult refreshResult = refreshSession("user@example.com", "User");
+                String refreshDeviceId = getCookieFromStore("device_id").getValue();
+
+                assertThat(refreshDeviceId).isEqualTo(loginDeviceId);
+                assertThat(refreshResult.refreshToken).isNotEqualTo(loginResult.refreshToken);
+                assertTokenWorks(refreshResult.accessToken);
+
+                RefreshToken oldToken = findTokenByHash(loginResult.refreshToken);
+                RefreshToken newToken = findTokenByHash(refreshResult.refreshToken);
+                Instant now = Instant.now();
+
+                assertThat(oldToken.wasRotated()).isTrue();
+                assertThat(oldToken.wasReused()).isFalse();
+                assertThat(newToken.isActive(now)).isTrue();
+                assertThat(oldToken.getReplacedByTokenId()).isEqualTo(newToken.getId());
+                assertThat(oldToken.getFamilyId()).isEqualTo(newToken.getFamilyId());
+            }
+
+            @Test
+            void login_then_refresh_twice_builds_rotation_chain() {
+                AuthResult loginResult = login("user@example.com", "password", "User");
+                AuthResult refresh1 = refreshSession("user@example.com", "User");
+                AuthResult refresh2 = refreshSession("user@example.com", "User");
+
+                assertThat(refresh2.refreshToken).isNotEqualTo(loginResult.refreshToken);
+                assertThat(refresh2.refreshToken).isNotEqualTo(refresh1.refreshToken);
+                assertTokenWorks(refresh2.accessToken);
+
+                RefreshToken loginToken = findTokenByHash(loginResult.refreshToken);
+                RefreshToken refreshToken1 = findTokenByHash(refresh1.refreshToken);
+                RefreshToken refreshToken2 = findTokenByHash(refresh2.refreshToken);
+                Instant now = Instant.now();
+
+                assertThat(refreshToken1.wasRotated()).isTrue();
+                assertThat(refreshToken2.isActive(now)).isTrue();
+                assertThat(loginToken.getReplacedByTokenId()).isEqualTo(refreshToken1.getId());
+                assertThat(refreshToken1.getReplacedByTokenId()).isEqualTo(refreshToken2.getId());
+                assertThat(List.of(loginToken, refreshToken1, refreshToken2))
+                        .extracting(RefreshToken::getFamilyId)
+                        .containsOnly(loginToken.getFamilyId());
+            }
+        }
+
+        @Nested
+        class ReuseDetection {
+
+            @Test
+            void reusing_rotated_token_revokes_family_and_blocks_latest() {
+                AuthResult loginResult = login("user@example.com", "password", "User");
+                AuthResult refreshResult = refreshSession("user@example.com", "User");
+                setCookie("refresh_token", loginResult.refreshToken);
+                // Refresh with the old token -> reuse detected
+                restClient.post().uri("/auth/refresh")
+                        .exchange()
+                        .expectStatus().isUnauthorized()
+                        .expectBody()
+                        .jsonPath("$.code").isEqualTo("REFRESH_TOKEN_REUSED");
+                assertCookieStoreDoesNotContain("refresh_token");
+
+                setCookie("refresh_token", refreshResult.refreshToken);
+                // Refresh with the most recent token -> session killed because reuse was detected
+                restClient.post().uri("/auth/refresh")
+                        .exchange()
+                        .expectStatus().isUnauthorized()
+                        .expectBody()
+                        .jsonPath("$.code").isEqualTo("REFRESH_TOKEN_REUSED");
+                assertCookieStoreDoesNotContain("refresh_token");
+
+                RefreshToken refreshedSession = findTokenByHash(refreshResult.refreshToken);
+                assertThat(refreshTokenRepository.findAllByFamilyId(refreshedSession.getFamilyId()))
+                        .as("No new token should have been issued.")
+                        .hasSize(2);
+                assertThat(refreshedSession.wasReused())
+                        .as("The most recent token should be marked as reused")
+                        .isTrue();
+            }
+        }
+
+        @Nested
+        class Failures {
+
+            @ParameterizedTest(name = "[{0}]: {1}")
+            @CsvSource(value = {"missing_token, null", "invalid_token, invalid_token"}, nullValues = "null")
+            void refresh_without_device_id_cookie_returns_401(String ignoredTitle, @Nullable String refreshToken) {
+                setCookie("refresh_token", refreshToken);
+                restClient.post().uri("/auth/refresh")
+                        .exchange()
+                        .expectStatus().isUnauthorized()
+                        .expectBody()
+                        .jsonPath("$.code").isEqualTo("INVALID_SESSION");
+
+                assertCookieStoreDoesNotContain("refresh_token");
+            }
+
+            @Test
+            void refresh_with_invalid_token_cookie_returns_401() {
+                setCookie("device_id", VALID_DEVICE_ID);
+                setCookie("refresh_token", "invalid_token");
+                restClient.post().uri("/auth/refresh")
+                        .exchange()
+                        .expectStatus().isUnauthorized()
+                        .expectBody()
+                        .jsonPath("$.code").isEqualTo("INVALID_SESSION");
+
+                assertCookieStoreDoesNotContain("refresh_token");
+            }
+
+            @Test
+            void refresh_with_missing_token_cookie_returns_401() {
+                setCookie("device_id", VALID_DEVICE_ID);
+                restClient.post().uri("/auth/refresh")
+                        .exchange()
+                        .expectStatus().isUnauthorized()
+                        .expectBody()
+                        .jsonPath("$.code").isEqualTo("INVALID_SESSION");
+
+                assertCookieStoreDoesNotContain("refresh_token");
+            }
+
+            @Test
+            void refresh_with_expired_refresh_token_returns_401_without_rotation() {
+                String loginToken = login("user@example.com", "password", "User").refreshToken;
+                RefreshToken loginSession = findTokenByHash(loginToken);
+                loginSession.setExpiresAt(Instant.now().minus(Duration.ofMinutes(5)));
+                refreshTokenRepository.save(loginSession);
+
+                restClient.post().uri("/auth/refresh")
+                        .exchange()
+                        .expectStatus().isUnauthorized()
+                        .expectBody()
+                        .jsonPath("$.code").isEqualTo("INVALID_SESSION");
+
+                assertCookieStoreDoesNotContain("refresh_token");
+                assertThat(refreshTokenRepository.count()).isEqualTo(1);
+                assertThat(findTokenByHash(loginToken).wasRotated())
+                        .as("The token should not be rotated")
+                        .isFalse();
+            }
+        }
+    }
+
+    @Nested
+    class DevicePartitionTests {
+
+        @Test
+        void device_id_cookie_is_stable() {
+            Set<String> deviceIds = new HashSet<>();
+            login("user@example.com", "password", "User");
+            deviceIds.add(getCookieFromStore("device_id").getValue());
+            assertThat(deviceIds).hasSize(1);
+            refreshSession("user@example.com", "User");
+            deviceIds.add(getCookieFromStore("device_id").getValue());
+            assertThat(deviceIds).hasSize(1);
+            restClient.post().uri("/auth/register")
+                    .body("{\"email\": \"newuser@example.com\", \"password\": \"password\", \"displayName\": \"New\"}")
+                    .exchangeSuccessfully();
+            deviceIds.add(getCookieFromStore("device_id").getValue());
+            assertThat(deviceIds).hasSize(1);
+            login("newuser@example.com", "password", "New");
+            deviceIds.add(getCookieFromStore("device_id").getValue());
+            assertThat(deviceIds).hasSize(1);
+        }
+
+        @Test
+        void login_twice_with_same_device_id_replaces_previous_session() {
+            AuthResult login1 = login("user@example.com", "password", "User");
+            AuthResult login2 = login("user@example.com", "password", "User");
+            RefreshToken loginSession1 = findTokenByHash(login1.refreshToken);
+            RefreshToken loginSession2 = findTokenByHash(login2.refreshToken);
+
+            assertThat(loginSession1.getFamilyId())
+                    .as("The two sessions should have different familyId")
+                    .isNotEqualTo(loginSession2.getFamilyId());
+            assertThat(loginSession1.getDeviceId())
+                    .as("The two sessions should have the same deviceId")
+                    .isEqualTo(loginSession2.getDeviceId());
+            assertThat(loginSession1.wasLoggedOut())
+                    .as("The old session should be logged out")
+                    .isTrue();
+        }
+
+        @Test
+        void register_then_login_with_same_device_id_replaces_previous_session() {
+            AtomicReference<String> registerRefreshTokenRef = new AtomicReference<>();
+            restClient.post().uri("/auth/register")
+                    .body("{\"email\": \"newuser@example.com\", \"password\": \"password\", \"displayName\": \"New\"}")
+                    .exchangeSuccessfully()
+                    .expectCookie().value("refresh_token", registerRefreshTokenRef::set);
+            String loginRefreshToken = login("newuser@example.com", "password", "New").refreshToken;
+            RefreshToken registerSession = findTokenByHash(registerRefreshTokenRef.get());
+            RefreshToken loginSession = findTokenByHash(loginRefreshToken);
+
+            assertThat(registerSession.getFamilyId())
+                    .as("The two sessions should have different familyId")
+                    .isNotEqualTo(loginSession.getFamilyId());
+            assertThat(registerSession.getDeviceId())
+                    .as("The two sessions should have the same deviceId")
+                    .isEqualTo(loginSession.getDeviceId());
+            assertThat(registerSession.wasLoggedOut())
+                    .as("The old session should be logged out")
+                    .isTrue();
+        }
+
+        @Test
+        void login_again_after_removing_device_id_creates_new_family_and_device_id() {
+            AuthResult login1 = login("user@example.com", "password", "User");
+            // Expire the device_id cookie
+            BasicClientCookie deviceIdCookie = getCookieFromStore("device_id");
+            deviceIdCookie.setExpiryDate(Instant.now().minusSeconds(900));
+            cookieStore.addCookie(deviceIdCookie);
+            // Re-login
+            AuthResult login2 = login("user@example.com", "password", "User");
+
+            RefreshToken loginSession1 = findTokenByHash(login1.refreshToken);
+            RefreshToken loginSession2 = findTokenByHash(login2.refreshToken);
+            Instant now = Instant.now();
+
+            assertThat(loginSession1.getFamilyId())
+                    .as("The two sessions should have different familyId")
+                    .isNotEqualTo(loginSession2.getFamilyId());
+            assertThat(loginSession1.getDeviceId())
+                    .as("The two sessions should have different deviceId")
+                    .isNotEqualTo(loginSession2.getDeviceId());
+            assertThatList(List.of(loginSession1, loginSession2))
+                    .as("The both sessions should be active")
+                    .extracting(rt -> rt.isActive(now))
+                    .allMatch(b -> b.equals(true));
+        }
+
+        @Test
+        void login_as_another_user_with_same_device_id_replaces_previous_user_session() {
+            AtomicReference<String> registerRefreshTokenRef = new AtomicReference<>();
+            restClient.post().uri("/auth/register")
+                    .body("{\"email\": \"newuser@example.com\", \"password\": \"password\", \"displayName\": \"New\"}")
+                    .exchangeSuccessfully()
+                    .expectCookie().value("refresh_token", registerRefreshTokenRef::set);
+            String otherUserSessionToken = login("user@example.com", "password", "User").refreshToken;
+
+            RefreshToken registerSession = findTokenByHash(registerRefreshTokenRef.get());
+            RefreshToken otherUserLoginSession = findTokenByHash(otherUserSessionToken);
+
+            assertThat(registerSession.wasLoggedOut())
+                    .as("The previous user's session should be logged out")
+                    .isTrue();
+            assertThat(registerSession.getFamilyId())
+                    .as("The two sessions should have different familyId")
+                    .isNotEqualTo(otherUserLoginSession.getFamilyId());
+            assertThat(registerSession.getDeviceId())
+                    .as("The two sessions should have the same deviceId")
+                    .isEqualTo(otherUserLoginSession.getDeviceId());
+            assertThat(registerSession.getUserId())
+                    .as("The two sessions should belong to different users")
+                    .isNotEqualTo(otherUserLoginSession.getUserId());
+        }
+
+        @Test
+        void login_with_malformed_device_id_succeeds_but_replaces_the_cookie() {
+            setCookie("device_id", "malformed");
+            login("user@example.com", "password", "User");
+
+            assertThat(cookieStore.getCookies())
+                    .as("The device_id cookie should have changed")
+                    .filteredOn(c -> c.getName().equals("device_id"))
+                    .isNotEmpty()
+                    .first()
+                    .extracting(Cookie::getValue)
+                    .isNotEqualTo("malformed");
+        }
+
+        @Test
+        void register_with_malformed_device_id_succeeds_but_replaces_the_cookie() {
+            setCookie("device_id", "malformed");
+            restClient.post().uri("/auth/register")
+                    .body("{\"email\": \"newuser@example.com\", \"password\": \"password\", \"displayName\": \"New\"}")
+                    .exchangeSuccessfully();
+
+            assertThat(cookieStore.getCookies())
+                    .as("The device_id cookie should have changed")
+                    .filteredOn(c -> c.getName().equals("device_id"))
+                    .isNotEmpty().first()
+                    .extracting(Cookie::getValue)
+                    .isNotEqualTo("malformed");
+        }
+    }
+
+    private @NonNull BasicClientCookie getCookieFromStore(String name) {
+        return (BasicClientCookie) cookieStore.getCookies().stream()
+                .filter(c -> c.getName().equals(name))
+                .findFirst().orElseThrow();
+    }
+
+    private void setCookie(String name, String value) {
+        BasicClientCookie cookie = new BasicClientCookie(name, value);
+        cookie.setExpiryDate(Instant.now().plus(Duration.ofDays(7)));
+        cookie.setPath("/");
+        cookie.setDomain("localhost");
+        cookieStore.addCookie(cookie);
     }
 }

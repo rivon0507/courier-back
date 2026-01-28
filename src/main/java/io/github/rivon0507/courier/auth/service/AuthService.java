@@ -2,11 +2,11 @@ package io.github.rivon0507.courier.auth.service;
 
 import io.github.rivon0507.courier.auth.UserMapper;
 import io.github.rivon0507.courier.auth.api.AuthenticationResponse;
+import io.github.rivon0507.courier.auth.web.error.EmailAlreadyTakenException;
 import io.github.rivon0507.courier.auth.web.error.UnauthorizedException;
 import io.github.rivon0507.courier.common.domain.Role;
 import io.github.rivon0507.courier.common.domain.User;
 import io.github.rivon0507.courier.common.persistence.UserRepository;
-import io.github.rivon0507.courier.auth.web.error.EmailAlreadyTakenException;
 import io.github.rivon0507.courier.security.AppUserPrincipal;
 import io.github.rivon0507.courier.security.JwtProperties;
 import lombok.RequiredArgsConstructor;

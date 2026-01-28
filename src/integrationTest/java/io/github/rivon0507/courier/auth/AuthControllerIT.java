@@ -1,6 +1,9 @@
 package io.github.rivon0507.courier.auth;
 
 import io.github.rivon0507.courier.IntegrationTest;
+import io.github.rivon0507.courier.auth.domain.RefreshToken;
+import io.github.rivon0507.courier.auth.domain.RefreshTokenRepository;
+import io.github.rivon0507.courier.auth.service.RefreshTokenHasher;
 import io.github.rivon0507.courier.common.domain.Role;
 import io.github.rivon0507.courier.common.domain.User;
 import io.github.rivon0507.courier.common.persistence.UserRepository;
@@ -11,11 +14,11 @@ import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.client.RestTestClient;
 
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
@@ -106,7 +109,7 @@ public class AuthControllerIT {
                     dynamicTest(c.name(), () -> {
                         var request = restClient.post().uri("/auth/login");
                         if (c.body() != null) request.body(c.body());
-                        request.contentType(MediaType.APPLICATION_JSON).exchange().expectStatus().isBadRequest();
+                        request.exchange().expectStatus().isBadRequest();
                     })
             );
         }
@@ -120,7 +123,7 @@ public class AuthControllerIT {
             ).map(c ->
                     dynamicTest(c.name(), () -> restClient
                             .post().uri("/auth/login")
-                            .contentType(MediaType.APPLICATION_JSON)
+
                             .body(c.body())
                             .exchange().expectStatus().isUnauthorized()
                     )
@@ -131,7 +134,6 @@ public class AuthControllerIT {
         void validCredentials__returns200WithUsableToken() {
             var body = restClient.post()
                     .uri("/auth/login")
-                    .contentType(MediaType.APPLICATION_JSON)
                     .body("{\"email\":\"user@example.com\",\"password\":\"password\"}")
                     .exchange()
                     .expectStatus().isOk()
@@ -157,10 +159,7 @@ public class AuthControllerIT {
                     caseOf("blank displayName", "{\"email\": \"user@example.com\", \"password\": \"password\", \"displayName\": \"\"}"),
                     caseOf("no request body", null)
             ).map(c -> dynamicTest(c.name, () -> {
-                var requestBodySpec = restClient.post()
-                        .uri("/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON);
-
+                var requestBodySpec = restClient.post().uri("/auth/register");
                 if (c.body != null) requestBodySpec.body(c.body);
                 requestBodySpec.exchange().expectStatus().isBadRequest();
             }));
@@ -172,11 +171,9 @@ public class AuthControllerIT {
                     dynamicTest("register twice", () -> {
                         String requestBody = "{\"email\": \"newuser@example.com\", \"password\": \"password\", \"displayName\": \"User\"}";
                         restClient.post().uri("/auth/register")
-                                .contentType(MediaType.APPLICATION_JSON)
                                 .body(requestBody)
                                 .exchangeSuccessfully();
                         restClient.post().uri("/auth/register")
-                                .contentType(MediaType.APPLICATION_JSON)
                                 .body(requestBody)
                                 .exchange()
                                 .expectStatus().isEqualTo(HttpStatus.CONFLICT)
@@ -185,7 +182,6 @@ public class AuthControllerIT {
                     }),
                     dynamicTest("register with the email of an inactive user", () -> restClient.post()
                             .uri("/auth/register")
-                            .contentType(MediaType.APPLICATION_JSON)
                             .body("{\"email\": \"inactive@example.com\", \"password\": \"password\", \"displayName\": \"User\"}")
                             .exchange()
                             .expectStatus().isEqualTo(HttpStatus.CONFLICT)
@@ -198,7 +194,6 @@ public class AuthControllerIT {
         @Test
         void successfulRegister__returns201() {
             var body = restClient.post().uri("/auth/register")
-                    .contentType(MediaType.APPLICATION_JSON)
                     .body("{\"email\": \"newuser@example.com\", \"password\": \"password\", \"displayName\": \"New\"}")
                     .exchange()
                     .expectStatus().isCreated()

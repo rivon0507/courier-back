@@ -32,3 +32,5 @@ app:
       access-token-ttl: 15m
     session:
       refresh-token-ttl: 30d
+      device-id-max-age: 730d
+      enable-secure-cookies: true

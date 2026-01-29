@@ -54,6 +54,7 @@ public class AuthService {
     private final RefreshTokenHasher refreshTokenHasher;
     private final RefreshTokenMapper refreshTokenMapper;
     private final SessionProperties sessionProperties;
+    private final SessionRevocationService sessionRevocationService;
 
     /**
      * Controller should pass the device_id cookie if present; if absent, we create a new one.
@@ -139,7 +140,7 @@ public class AuthService {
 
         if (t1.getRevokedAt() != null) {
             if (t1.wasRotated() || t1.wasReused()) {
-                refreshTokenRepository.revokeActiveByFamilyId(t1.getFamilyId(), now, RefreshToken.RevokeReason.REUSE_DETECTED);
+                sessionRevocationService.revokeFamilyOfReusedToken(t1.getFamilyId(), now);
                 throw new InvalidSessionException("refresh_token reuse detected", "REFRESH_TOKEN_REUSED");
             }
             throw new InvalidSessionException("refresh_token was revoked");

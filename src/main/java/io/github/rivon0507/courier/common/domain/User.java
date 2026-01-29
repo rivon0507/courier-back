@@ -32,8 +32,8 @@ public class User {
     @Column(nullable = false, length = 32)
     private Role role;
 
-    @Column(nullable = false)
-    private boolean isActive;
+    @Column(name = "is_active", nullable = false)
+    private boolean active = true;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
@@ -64,7 +64,7 @@ public class User {
                ", email='" + email + "'" +
                ", displayName='" + displayName + "'" +
                ", role=" + role +
-               ", isActive=" + isActive +
+               ", isActive=" + active +
                '}';
     }
 }

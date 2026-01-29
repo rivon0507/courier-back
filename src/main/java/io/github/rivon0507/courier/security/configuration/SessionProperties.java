@@ -6,6 +6,8 @@ import java.time.Duration;
 
 @ConfigurationProperties(prefix = "app.security.session")
 public record SessionProperties (
-        Duration refreshTokenTtl
+        Duration refreshTokenTtl,
+        Duration deviceIdMaxAge,
+        Boolean enableSecureCookies
 ) {
 }

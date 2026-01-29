@@ -6,3 +6,5 @@ app:
     jwt:
       private-key-uri: classpath:keys/jwt-test-private.pem
       public-key-uri: classpath:keys/jwt-test-public.pem
+    session:
+      enable-secure-cookies: false

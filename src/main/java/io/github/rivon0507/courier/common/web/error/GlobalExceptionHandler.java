@@ -8,8 +8,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
 import org.springframework.http.*;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -41,7 +39,6 @@ import static io.github.rivon0507.courier.common.web.error.ProblemDetailsFactory
  * <p>Note: authentication/authorization errors (401/403) are produced by Spring Security's filter chain and may need
  * explicit Security handlers (AuthenticationEntryPoint / AccessDeniedHandler) if you want bodies for those responses.
  */
-@Order(Ordered.HIGHEST_PRECEDENCE)
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {

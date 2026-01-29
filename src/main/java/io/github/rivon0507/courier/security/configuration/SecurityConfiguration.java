@@ -58,7 +58,8 @@ public class SecurityConfiguration {
                                 "/actuator/health",
                                 "/auth/login",
                                 "/auth/register",
-                                "/auth/refresh"
+                                "/auth/refresh",
+                                "/auth/logout"
                         ).permitAll()
                         .requestMatchers("/_security/ping").authenticated()
                         .anyRequest().denyAll()

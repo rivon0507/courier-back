@@ -74,6 +74,15 @@ class AuthController {
                 .body(result.response());
     }
 
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(
+            @CookieValue(name = "refresh_token", required = false) @Nullable String refreshToken,
+            @CookieValue(name = "device_id", required = false) @Nullable String deviceId) {
+
+        authService.logout(refreshToken, deviceId);
+        return ResponseEntity.noContent().build();
+    }
+
     private @NonNull HttpHeaders buildAuthSessionHeaders(@NonNull AuthSessionResult result, String existingDeviceId) {
         HttpHeaders cookieHeaders = new HttpHeaders();
         List<String> cookieStrings = new ArrayList<>(2);

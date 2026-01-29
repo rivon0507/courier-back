@@ -166,6 +166,10 @@ public class AuthService {
         );
     }
 
+    public void logout(@Nullable String refreshToken, @Nullable String deviceId) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
     private AuthenticationResponse toAuthResponse(Jwt jwt, AppUserPrincipal principal) {
         long expiresInSeconds = Duration.between(Instant.now(clock), jwt.getExpiresAt()).getSeconds();
         return new AuthenticationResponse(

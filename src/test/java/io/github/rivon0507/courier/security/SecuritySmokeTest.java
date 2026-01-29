@@ -4,6 +4,7 @@ import io.github.rivon0507.courier.TestJwtConfiguration;
 import io.github.rivon0507.courier.common.persistence.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
@@ -20,12 +21,11 @@ import java.util.Set;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(properties = {"""
-                        spring.autoconfigure.exclude=\
-                        org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration,\
-                        org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration,\
-                        org.springframework.boot.flyway.autoconfigure.FlywayAutoConfiguration
-        """})
+@SpringBootTest(properties = """
+        spring.flyway.enabled=false
+        spring.jpa.hibernate.ddl-auto=create-drop
+        """)
+@AutoConfigureTestDatabase
 @AutoConfigureMockMvc
 @Import(TestJwtConfiguration.class)
 @ActiveProfiles({"test"})

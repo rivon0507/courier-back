@@ -1,4 +1,4 @@
-package io.github.rivon0507.courier.security;
+package io.github.rivon0507.courier.security.configuration;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

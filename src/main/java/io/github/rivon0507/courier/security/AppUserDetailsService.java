@@ -20,6 +20,7 @@ class AppUserDetailsService implements UserDetailsService {
         var user = userRepository.findUserByEmail(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User with email" + username + " does not exist"));
         return new AppUserPrincipal(
+                user.getId(),
                 user.getEmail(),
                 user.getDisplayName(),
                 user.getRole().name(),

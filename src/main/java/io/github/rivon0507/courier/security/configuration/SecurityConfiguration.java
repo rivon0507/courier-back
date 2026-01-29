@@ -1,4 +1,4 @@
-package io.github.rivon0507.courier.security;
+package io.github.rivon0507.courier.security.configuration;
 
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.jwk.JWK;
@@ -7,7 +7,6 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.proc.SecurityContext;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
@@ -43,7 +42,6 @@ import java.util.List;
 
 @Configuration
 @EnableMethodSecurity
-@EnableConfigurationProperties({JwtProperties.class, CorsProperties.class})
 public class SecurityConfiguration {
 
     @Bean
@@ -59,7 +57,8 @@ public class SecurityConfiguration {
                         .requestMatchers(
                                 "/actuator/health",
                                 "/auth/login",
-                                "/auth/register"
+                                "/auth/register",
+                                "/auth/refresh"
                         ).permitAll()
                         .requestMatchers("/_security/ping").authenticated()
                         .anyRequest().denyAll()

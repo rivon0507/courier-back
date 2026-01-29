@@ -15,6 +15,8 @@ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.test.web.servlet.client.RestTestClient;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.util.function.Function;
+
 @TestConfiguration
 public class RestTestClientConfiguration {
 
@@ -25,18 +27,25 @@ public class RestTestClientConfiguration {
     }
 
     @Bean
-    RestTestClient restTestClient(CookieStore cookieStore, WebApplicationContext applicationContext) {
-        CloseableHttpClient httpClient = HttpClients.custom()
-                .setDefaultCookieStore(cookieStore)
-                .build();
-        HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(httpClient);
+    Function<CookieStore, RestTestClient> restTestClientFactory(WebApplicationContext applicationContext) {
+        return cookieStore -> {
+            CloseableHttpClient httpClient = HttpClients.custom()
+                    .setDefaultCookieStore(cookieStore)
+                    .build();
+            HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(httpClient);
 
-        LocalTestWebServer localTestWebServer = LocalTestWebServer.get(applicationContext);
-        assert localTestWebServer != null;
+            LocalTestWebServer localTestWebServer = LocalTestWebServer.get(applicationContext);
+            assert localTestWebServer != null;
 
-        return RestTestClient.bindToServer(factory)
-                .uriBuilderFactory(localTestWebServer.uriBuilderFactory())
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .build();
+            return RestTestClient.bindToServer(factory)
+                    .uriBuilderFactory(localTestWebServer.uriBuilderFactory())
+                    .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                    .build();
+        };
+    }
+
+    @Bean
+    RestTestClient restTestClient(CookieStore cookieStore, Function<CookieStore, RestTestClient> restTestClientFactory) {
+        return restTestClientFactory.apply(cookieStore);
     }
 }

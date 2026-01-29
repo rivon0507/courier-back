@@ -166,6 +166,26 @@ public class AuthService {
         );
     }
 
+    @Transactional
+    public void logout(@Nullable String refreshToken, @Nullable String deviceId) {
+        if (refreshToken == null || deviceId == null) return;
+        UUID deviceUuid;
+        try {
+            deviceUuid = UUID.fromString(deviceId);
+        } catch (IllegalArgumentException e) {
+            return;
+        }
+        var optionalSession = refreshTokenRepository.findByTokenHash(refreshTokenHasher.hash(refreshToken));
+        if (optionalSession.isEmpty()) return;
+        RefreshToken session = optionalSession.get();
+        if (!session.getDeviceId().equals(deviceUuid)) return;
+        Instant now = Instant.now(clock);
+        if (session.isExpired(now)) return;
+        if (session.getRevokedAt() != null) return;
+        session.revokeAsLogout(now);
+        refreshTokenRepository.save(session);
+    }
+
     private AuthenticationResponse toAuthResponse(Jwt jwt, AppUserPrincipal principal) {
         long expiresInSeconds = Duration.between(Instant.now(clock), jwt.getExpiresAt()).getSeconds();
         return new AuthenticationResponse(

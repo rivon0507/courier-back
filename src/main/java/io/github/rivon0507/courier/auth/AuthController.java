@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -80,7 +81,9 @@ class AuthController {
             @CookieValue(name = "device_id", required = false) @Nullable String deviceId) {
 
         authService.logout(refreshToken, deviceId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.noContent()
+                .headers(headers -> headers.set("Set-Cookie", clearRefreshTokenCookie().toString()))
+                .build();
     }
 
     private @NonNull HttpHeaders buildAuthSessionHeaders(@NonNull AuthSessionResult result, String existingDeviceId) {
@@ -95,21 +98,23 @@ class AuthController {
     }
 
     private @NonNull ResponseCookie buildDeviceIdCookieFrom(AuthSessionResult result) {
-        return ResponseCookie.from("device_id", result.cookies().deviceId())
-                .httpOnly(true)
-                .secure(sessionProperties.enableSecureCookies())
-                .path("/")
-                .maxAge(sessionProperties.deviceIdMaxAge())
-                .sameSite("Lax")
-                .build();
+        return buildSessionCookie("device_id", result.cookies().deviceId(), sessionProperties.deviceIdMaxAge());
+    }
+
+    private @NonNull ResponseCookie clearRefreshTokenCookie() {
+        return buildSessionCookie("refresh_token", "", Duration.ZERO);
     }
 
     private @NonNull ResponseCookie buildRefreshTokenCookieFrom(AuthSessionResult result) {
-        return ResponseCookie.from("refresh_token", result.cookies().refreshToken())
+        return buildSessionCookie("refresh_token", result.cookies().refreshToken(), sessionProperties.refreshTokenTtl());
+    }
+
+    private @NonNull ResponseCookie buildSessionCookie(String name, String value, Duration maxAge) {
+        return ResponseCookie.from(name, value)
                 .httpOnly(true)
                 .secure(sessionProperties.enableSecureCookies())
                 .path("/")
-                .maxAge(sessionProperties.refreshTokenTtl())
+                .maxAge(maxAge)
                 .sameSite("Lax")
                 .build();
     }

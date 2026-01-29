@@ -5,6 +5,8 @@ import io.github.rivon0507.courier.auth.api.AuthenticationResponse;
 import io.github.rivon0507.courier.auth.domain.RefreshToken;
 import io.github.rivon0507.courier.auth.domain.RefreshTokenRepository;
 import io.github.rivon0507.courier.auth.web.error.EmailAlreadyTakenException;
+import io.github.rivon0507.courier.auth.web.error.InvalidDeviceIdException;
+import io.github.rivon0507.courier.auth.web.error.InvalidSessionException;
 import io.github.rivon0507.courier.auth.web.error.UnauthorizedException;
 import io.github.rivon0507.courier.common.domain.Role;
 import io.github.rivon0507.courier.common.domain.User;
@@ -123,23 +125,24 @@ public class AuthService {
      */
     @Transactional
     public AuthSessionResult refreshSession(@Nullable String refreshToken, @Nullable String deviceId) {
-        if (refreshToken == null || refreshToken.isBlank()) throw new UnauthorizedException("REFRESH_TOKEN_MISSING");
+        if (deviceId == null) throw new InvalidSessionException("device_id is null");
         UUID deviceUuid = parseDeviceId(deviceId);
+        if (refreshToken == null) throw new InvalidSessionException("refresh_token is null or blank");
 
         byte[] tokenHash = refreshTokenHasher.hash(refreshToken);
         RefreshToken t1 = refreshTokenRepository.findByTokenHash(tokenHash)
-                .orElseThrow(() -> new UnauthorizedException("REFRESH_TOKEN_INVALID"));
+                .orElseThrow(() -> new InvalidSessionException("Refresh token does not exist in DB"));
 
-        if (!t1.getDeviceId().equals(deviceUuid)) throw new UnauthorizedException("INVALID_SESSION");
+        if (!t1.getDeviceId().equals(deviceUuid)) throw new InvalidSessionException("device_id did not match the refresh token's");
         Instant now = Instant.now(clock);
-        if (t1.isExpired(now)) throw new UnauthorizedException("REFRESH_TOKEN_EXPIRED");
+        if (t1.isExpired(now)) throw new InvalidSessionException("refresh_token has expired");
 
         if (t1.getRevokedAt() != null) {
             if (t1.wasRotated() || t1.wasReused()) {
                 refreshTokenRepository.revokeActiveByFamilyId(t1.getFamilyId(), now, RefreshToken.RevokeReason.REUSE_DETECTED);
-                throw new UnauthorizedException("REFRESH_TOKEN_REUSED");
+                throw new InvalidSessionException("refresh_token reuse detected", "REFRESH_TOKEN_REUSED");
             }
-            throw new UnauthorizedException("INVALID_SESSION");
+            throw new InvalidSessionException("refresh_token was revoked");
         }
 
         String rawToken = UUID.randomUUID().toString();
@@ -151,7 +154,7 @@ public class AuthService {
 
         AppUserPrincipal principal = userRepository.findById(saved.getUserId())
                 .map(userMapper::toUserPrincipal)
-                .orElseThrow(() -> new UnauthorizedException("INVALID_SESSION"));
+                .orElseThrow(() -> new InvalidSessionException("user not found for refresh_token"));
 
         Jwt jwt = encodeAccessToken(principal);
         AuthenticationResponse response = toAuthResponse(jwt, principal);
@@ -172,17 +175,37 @@ public class AuthService {
         );
     }
 
+    /**
+     * Parses a UUID from the provided string or generates a random one if the provided string cannot be parsed.
+     *
+     * @param deviceId the string to parse into a UUID
+     * @return the parsed UUID or a random one via {@link  UUID#randomUUID()}
+     * @see AuthService#parseDeviceId(String)
+     */
     private UUID ensureDeviceId(@Nullable String deviceId) {
-        if (deviceId == null || deviceId.isBlank()) return UUID.randomUUID();
-        return parseDeviceId(deviceId);
-    }
-
-    private UUID parseDeviceId(@Nullable String deviceId) {
-        if (deviceId == null) throw new UnauthorizedException("INVALID_SESSION");
+        if (deviceId == null) return UUID.randomUUID();
         try {
             return UUID.fromString(deviceId);
         } catch (IllegalArgumentException e) {
-            throw new UnauthorizedException("INVALID_SESSION");
+            return UUID.randomUUID();
+        }
+    }
+
+    /**
+     * Parses a UUID from the provided string.
+     * <p>
+     * Unlike {@link AuthService#ensureDeviceId(String)}, this method throws if the string cannot be parsed.
+     *
+     * @param deviceId the string to parse into a UUID
+     * @return the parsed UUID or a random one via {@link  UUID#randomUUID()}
+     * @throws InvalidDeviceIdException if the device id is malformed
+     * @see AuthService#ensureDeviceId(String)
+     */
+    private UUID parseDeviceId(@NonNull String deviceId) {
+        try {
+            return UUID.fromString(deviceId);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidDeviceIdException();
         }
     }
 

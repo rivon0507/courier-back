@@ -2,17 +2,19 @@ package io.github.rivon0507.courier.auth.service;
 
 import io.github.rivon0507.courier.auth.UserMapper;
 import io.github.rivon0507.courier.auth.api.AuthenticationResponse;
+import io.github.rivon0507.courier.auth.domain.RefreshToken;
+import io.github.rivon0507.courier.auth.domain.RefreshTokenRepository;
 import io.github.rivon0507.courier.auth.web.error.EmailAlreadyTakenException;
 import io.github.rivon0507.courier.auth.web.error.UnauthorizedException;
 import io.github.rivon0507.courier.common.domain.Role;
 import io.github.rivon0507.courier.common.domain.User;
 import io.github.rivon0507.courier.common.persistence.UserRepository;
 import io.github.rivon0507.courier.security.AppUserPrincipal;
-import io.github.rivon0507.courier.security.JwtProperties;
+import io.github.rivon0507.courier.security.configuration.JwtProperties;
+import io.github.rivon0507.courier.security.configuration.SessionProperties;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -26,15 +28,16 @@ import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-@EnableConfigurationProperties({JwtProperties.class})
 public class AuthService {
 
     public static final String UNIQUE_EMAIL_CONSTRAINT = "uk_users_email";
@@ -45,8 +48,18 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final RefreshTokenRepository refreshTokenRepository;
+    private final RefreshTokenHasher refreshTokenHasher;
+    private final RefreshTokenMapper refreshTokenMapper;
+    private final SessionProperties sessionProperties;
 
-    public AuthenticationResponse login(@NonNull String username, @NonNull String password) {
+    /**
+     * Controller should pass the device_id cookie if present; if absent, we create a new one.
+     * This method revokes any currently-active session(s) for that device_id to prevent "dangling" tokens.
+     */
+    @Transactional
+    public AuthSessionResult login(@NonNull String username, @NonNull String password, @Nullable String deviceId) {
+        UUID deviceUuid = ensureDeviceId(deviceId);
         Authentication authenticated;
         try {
             authenticated = authenticationManager.authenticate(
@@ -58,16 +71,23 @@ public class AuthService {
         Objects.requireNonNull(authenticated.getPrincipal(), "Authenticated principal must not be null");
         AppUserPrincipal principal = (AppUserPrincipal) authenticated.getPrincipal();
         Jwt jwt = encodeAccessToken(principal);
-        long expiresInSeconds = Duration.between(Instant.now(clock), jwt.getExpiresAt()).getSeconds();
-        return new AuthenticationResponse(
-                jwt.getTokenValue(),
-                "Bearer",
-                expiresInSeconds,
-                userMapper.principalToUserDto(principal)
+
+        revokeActiveByDevice(deviceUuid);
+        String refreshToken = issueRefreshToken(principal.id(), deviceUuid);
+        AuthenticationResponse response = toAuthResponse(jwt, principal);
+
+        return new AuthSessionResult(
+                response,
+                new AuthSessionResult.RefreshCookies(refreshToken, deviceUuid.toString())
         );
     }
 
-    public AuthenticationResponse register(@NonNull String email, @NonNull String password, @NonNull String displayName) {
+    @Transactional
+    public AuthSessionResult register(@NonNull String email,
+                                      @NonNull String password,
+                                      @NonNull String displayName,
+                                      @Nullable String deviceId) {
+        UUID deviceUuid = ensureDeviceId(deviceId);
         User user = userMapper.from(email, displayName, Role.USER);
         user.setPasswordHash(passwordEncoder.encode(password));
         User saved;
@@ -78,14 +98,107 @@ public class AuthService {
             throw e;
         }
 
-        Jwt jwt = encodeAccessToken(userMapper.toUserPrincipal(saved));
+        AppUserPrincipal principal = userMapper.toUserPrincipal(saved);
+        Jwt jwt = encodeAccessToken(principal);
+
+        revokeActiveByDevice(deviceUuid);
+        String refreshToken = issueRefreshToken(saved.getId(), deviceUuid);
+
+        return new AuthSessionResult(
+                toAuthResponse(jwt, principal),
+                new AuthSessionResult.RefreshCookies(refreshToken, deviceUuid.toString())
+        );
+    }
+
+    /**
+     * Refresh endpoint: requires BOTH cookies.
+     * <p>
+     * - missing device_id => INVALID_SESSION (401)
+     * <p>
+     * - missing refresh_token => 401
+     * <p>
+     * - token not found / mismatched device / expired / revoked => 401
+     * <p>
+     * - revoked+ROTATED => reuse detection => revoke all active tokens in family with REUSE_DETECTED => 401
+     */
+    @Transactional
+    public AuthSessionResult refreshSession(@Nullable String refreshToken, @Nullable String deviceId) {
+        if (refreshToken == null || refreshToken.isBlank()) throw new UnauthorizedException("REFRESH_TOKEN_MISSING");
+        UUID deviceUuid = parseDeviceId(deviceId);
+
+        byte[] tokenHash = refreshTokenHasher.hash(refreshToken);
+        RefreshToken t1 = refreshTokenRepository.findByTokenHash(tokenHash)
+                .orElseThrow(() -> new UnauthorizedException("REFRESH_TOKEN_INVALID"));
+
+        if (!t1.getDeviceId().equals(deviceUuid)) throw new UnauthorizedException("INVALID_SESSION");
+        Instant now = Instant.now(clock);
+        if (t1.isExpired(now)) throw new UnauthorizedException("REFRESH_TOKEN_EXPIRED");
+
+        if (t1.getRevokedAt() != null) {
+            if (t1.wasRotated() || t1.wasReused()) {
+                refreshTokenRepository.revokeActiveByFamilyId(t1.getFamilyId(), now, RefreshToken.RevokeReason.REUSE_DETECTED);
+                throw new UnauthorizedException("REFRESH_TOKEN_REUSED");
+            }
+            throw new UnauthorizedException("INVALID_SESSION");
+        }
+
+        String rawToken = UUID.randomUUID().toString();
+        RefreshToken token = refreshTokenMapper.fromSiblingTokenAndHash(t1, refreshTokenHasher.hash(rawToken));
+        RefreshToken saved = refreshTokenRepository.save(token);
+
+        t1.revokeAsRotated(now, saved.getId());
+        refreshTokenRepository.save(t1);
+
+        AppUserPrincipal principal = userRepository.findById(saved.getUserId())
+                .map(userMapper::toUserPrincipal)
+                .orElseThrow(() -> new UnauthorizedException("INVALID_SESSION"));
+
+        Jwt jwt = encodeAccessToken(principal);
+        AuthenticationResponse response = toAuthResponse(jwt, principal);
+
+        return new AuthSessionResult(
+                response,
+                new AuthSessionResult.RefreshCookies(rawToken, deviceUuid.toString())
+        );
+    }
+
+    private AuthenticationResponse toAuthResponse(Jwt jwt, AppUserPrincipal principal) {
         long expiresInSeconds = Duration.between(Instant.now(clock), jwt.getExpiresAt()).getSeconds();
         return new AuthenticationResponse(
                 jwt.getTokenValue(),
                 "Bearer",
                 expiresInSeconds,
-                userMapper.toUserDto(saved)
+                userMapper.principalToUserDto(principal)
         );
+    }
+
+    private UUID ensureDeviceId(@Nullable String deviceId) {
+        if (deviceId == null || deviceId.isBlank()) return UUID.randomUUID();
+        return parseDeviceId(deviceId);
+    }
+
+    private UUID parseDeviceId(@Nullable String deviceId) {
+        if (deviceId == null) throw new UnauthorizedException("INVALID_SESSION");
+        try {
+            return UUID.fromString(deviceId);
+        } catch (IllegalArgumentException e) {
+            throw new UnauthorizedException("INVALID_SESSION");
+        }
+    }
+
+    private void revokeActiveByDevice(UUID deviceId) {
+        Instant now = Instant.now(clock);
+        refreshTokenRepository.revokeActiveByDeviceId(deviceId, now, RefreshToken.RevokeReason.LOGOUT);
+    }
+
+    private String issueRefreshToken(Long userId, UUID deviceId) {
+        UUID familyId = UUID.randomUUID();
+        Instant expiresAt = Instant.now().plus(sessionProperties.refreshTokenTtl());
+        String raw = UUID.randomUUID().toString();
+        byte[] hash = refreshTokenHasher.hash(raw);
+        RefreshToken token = refreshTokenMapper.from(userId, familyId, deviceId, hash, expiresAt);
+        refreshTokenRepository.save(token);
+        return raw;
     }
 
     private Jwt encodeAccessToken(AppUserPrincipal principal) {
@@ -107,9 +220,5 @@ public class AuthService {
                 .claim("name", principal.displayName());
 
         return jwtEncoder.encode(JwtEncoderParameters.from(claims.build()));
-    }
-
-    public AuthSessionResult refreshSession(@Nullable String refreshToken, @Nullable String deviceId) {
-        throw new UnsupportedOperationException("Not implemented");
     }
 }

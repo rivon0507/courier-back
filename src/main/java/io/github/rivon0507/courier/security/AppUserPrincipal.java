@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.List;
 
 public record AppUserPrincipal(
+        Long id,
         String email,
         String displayName,
         String role,

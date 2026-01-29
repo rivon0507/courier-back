@@ -2,8 +2,10 @@ package io.github.rivon0507.courier;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 
 @SpringBootApplication
+@ConfigurationPropertiesScan
 public class CourierApplication {
 
     public static void main(String[] args) {

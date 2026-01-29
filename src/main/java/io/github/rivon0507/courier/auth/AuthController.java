@@ -22,29 +22,37 @@ class AuthController {
     private final AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<AuthenticationResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
-        return ResponseEntity.ok(authService.login(loginRequest.email(), loginRequest.password()));
+    public ResponseEntity<AuthenticationResponse> login(
+            @Valid @RequestBody LoginRequest loginRequest,
+            @CookieValue(name = "device_id", required = false) @Nullable String deviceId) {
+
+        return ResponseEntity.ok(authService.login(loginRequest.email(), loginRequest.password(), deviceId).response());
     }
 
     @PostMapping("/register")
-    public ResponseEntity<AuthenticationResponse> register(@Valid @RequestBody RegisterRequest registerRequest) {
-        AuthenticationResponse authenticationResponse = authService.register(
+    public ResponseEntity<AuthenticationResponse> register(
+            @Valid @RequestBody RegisterRequest registerRequest,
+            @CookieValue(name = "device_id", required = false) @Nullable String deviceId) {
+
+        AuthSessionResult result = authService.register(
                 registerRequest.email(),
                 registerRequest.password(),
-                registerRequest.displayName()
+                registerRequest.displayName(),
+                deviceId
         );
         URI location = ServletUriComponentsBuilder.fromCurrentContextPath()
                 .path("/users/me")
                 .build()
                 .toUri();
         return ResponseEntity.created(location)
-                .body(authenticationResponse);
+                .body(result.response());
     }
 
     @PostMapping("/refresh")
     public ResponseEntity<AuthenticationResponse> refreshSession(
             @CookieValue(name = "refresh_token", required = false) @Nullable String refreshToken,
             @CookieValue(name = "device_id", required = false) @Nullable String deviceId) {
+
         AuthSessionResult result = authService.refreshSession(refreshToken, deviceId);
         return ResponseEntity.ok(result.response());
     }

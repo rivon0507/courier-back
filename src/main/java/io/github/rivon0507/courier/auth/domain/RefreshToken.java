@@ -17,6 +17,7 @@ public class RefreshToken {
 
     @Id
     @Column(nullable = false, updatable = false)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(name = "user_id", nullable = false)
@@ -81,11 +82,6 @@ public class RefreshToken {
         this.revokedAt = now;
         this.revokeReason = RevokeReason.ROTATED;
         this.replacedByTokenId = replacedByTokenId;
-    }
-
-    public void revokeAsReuseDetected(Instant now) {
-        this.revokedAt = now;
-        this.revokeReason = RevokeReason.REUSE_DETECTED;
     }
 
     public void revokeAsLogout(Instant now) {

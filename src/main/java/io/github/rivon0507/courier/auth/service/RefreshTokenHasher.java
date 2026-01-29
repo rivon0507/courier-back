@@ -9,7 +9,7 @@ import java.security.NoSuchAlgorithmException;
 
 @Component
 public class RefreshTokenHasher {
-    public byte[] sha256(@NonNull String rawToken) {
+    public byte[] hash(@NonNull String rawToken) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             return md.digest(rawToken.getBytes(StandardCharsets.UTF_8));

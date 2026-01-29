@@ -1,4 +1,4 @@
-package io.github.rivon0507.courier.security;
+package io.github.rivon0507.courier.security.configuration;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.InitializingBean;

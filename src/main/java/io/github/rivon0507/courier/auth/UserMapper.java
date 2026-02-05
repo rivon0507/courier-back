@@ -14,6 +14,7 @@ public interface UserMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "active", ignore = true)
+    @Mapping(target = "defaultWorkspace", ignore = true)
     User from(String email, String displayName, Role role);
 
     AppUserPrincipal toUserPrincipal(User user);

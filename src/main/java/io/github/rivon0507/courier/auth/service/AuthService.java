@@ -10,6 +10,7 @@ import io.github.rivon0507.courier.auth.web.error.InvalidSessionException;
 import io.github.rivon0507.courier.auth.web.error.UnauthorizedException;
 import io.github.rivon0507.courier.common.domain.Role;
 import io.github.rivon0507.courier.common.domain.User;
+import io.github.rivon0507.courier.common.domain.Workspace;
 import io.github.rivon0507.courier.common.persistence.UserRepository;
 import io.github.rivon0507.courier.security.AppUserPrincipal;
 import io.github.rivon0507.courier.security.configuration.JwtProperties;
@@ -57,7 +58,7 @@ public class AuthService {
     private final SessionRevocationService sessionRevocationService;
 
     /**
-     * Controller should pass the device_id cookie if present; if absent, we create a new one.
+     * Controller should pass the device_id cookie if present. If absent, we create a new one.
      * This method revokes any currently-active session(s) for that device_id to prevent "dangling" tokens.
      */
     @Transactional
@@ -100,6 +101,11 @@ public class AuthService {
              if (e.getLocalizedMessage().contains(UNIQUE_EMAIL_CONSTRAINT)) throw new EmailAlreadyTakenException();
             throw e;
         }
+
+        Workspace defaultWorkspace = new Workspace();
+        defaultWorkspace.setOwner(saved);
+        saved.setDefaultWorkspace(defaultWorkspace);
+        userRepository.save(user);
 
         AppUserPrincipal principal = userMapper.toUserPrincipal(saved);
         Jwt jwt = encodeAccessToken(principal);

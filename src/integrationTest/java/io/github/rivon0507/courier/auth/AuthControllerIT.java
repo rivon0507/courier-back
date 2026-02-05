@@ -28,10 +28,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -322,7 +319,7 @@ public class AuthControllerIT {
         }
 
         @Test
-        void successfulRegister__returns201() {
+        void successfulRegister__returns201AndCreateDefaultWorkspace() {
             var body = restClient.post().uri("/auth/register")
                     .body("{\"email\": \"newuser@example.com\", \"password\": \"password\", \"displayName\": \"New\"}")
                     .exchange()
@@ -332,6 +329,14 @@ public class AuthControllerIT {
 
             String accessToken = assertAuthResponseAndExtractToken(body, "newuser@example.com", "New");
             assertTokenWorks(accessToken);
+            Optional<User> userOptional = userRepository.findUserByEmail("newuser@example.com");
+            //noinspection OptionalGetWithoutIsPresent
+            assertThat(userOptional)
+                    .as("The new user should exist in DB")
+                    .get()
+                    .as("The user should have a default workspace")
+                    .extracting(User::getDefaultWorkspace)
+                    .matches(w -> w != null && Objects.equals(w.getOwner().getId(), userOptional.get().getId()));
         }
     }
 

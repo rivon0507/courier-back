@@ -7,12 +7,6 @@ public record EnvoiResponse(
         String reference,
         String observation,
         String dateEnvoi,
-        List<Piece> pieces
+        List<PieceResponse> pieces
 ) {
-    public record Piece(
-            long id,
-            String designation,
-            int quantite
-    ) {
-    }
 }

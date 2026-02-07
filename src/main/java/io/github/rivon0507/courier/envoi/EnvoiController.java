@@ -51,7 +51,7 @@ public class EnvoiController {
             @RequestBody EnvoiUpdateRequest requestBody,
             @PathVariable Long workspaceId) {
 
-        return ResponseEntity.ok(envoiService.update(envoiId, workspaceId, requestBody));
+        return ResponseEntity.ok(envoiService.update(envoiId, requestBody, workspaceId));
     }
 
     @DeleteMapping("/{envoiId}")

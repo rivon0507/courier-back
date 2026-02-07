@@ -1,11 +1,11 @@
 package io.github.rivon0507.courier.envoi;
 
 import io.github.rivon0507.courier.common.pagination.PagedResponse;
-import io.github.rivon0507.courier.envoi.api.EnvoiCreateRequest;
-import io.github.rivon0507.courier.envoi.api.EnvoiResponse;
-import io.github.rivon0507.courier.envoi.api.EnvoiUpdateRequest;
+import io.github.rivon0507.courier.envoi.api.*;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class EnvoiService {
@@ -17,7 +17,7 @@ public class EnvoiService {
         throw new UnsupportedOperationException("Not implemented");
     }
 
-    public EnvoiResponse update(String envoiId, Long workspaceId, EnvoiUpdateRequest requestBody) {
+    public EnvoiResponse update(String envoiId, EnvoiUpdateRequest requestBody, Long workspaceId) {
         throw new UnsupportedOperationException("Not implemented");
     }
 
@@ -26,6 +26,22 @@ public class EnvoiService {
     }
 
     public EnvoiResponse get(Long envoiId, Long workspaceId) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    public List<PieceResponse> createPieces(String envoiId, List<PieceCreateRequest> request, Long workspaceId) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    public List<PieceResponse> updatePieces(String envoiId, List<PieceUpdateRequest> request, Long workspaceId) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    public void deletePieces(String envoiId, List<Long> request, Long workspaceId) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    public PagedResponse<PieceResponse> getPiecesPage(String envoiId, Pageable page, Long workspaceId) {
         throw new UnsupportedOperationException("Not implemented");
     }
 }

@@ -9,7 +9,7 @@ import java.util.List;
 
 @Service
 public class EnvoiService {
-    public EnvoiResponse create(EnvoiCreateRequest request, Long workspaceId) {
+    public EnvoiDetailsResponse create(EnvoiCreateRequest request, Long workspaceId) {
         throw new UnsupportedOperationException("Not implemented");
     }
 

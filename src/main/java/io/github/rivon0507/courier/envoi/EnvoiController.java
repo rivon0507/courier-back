@@ -2,11 +2,11 @@ package io.github.rivon0507.courier.envoi;
 
 import io.github.rivon0507.courier.common.pagination.PagedResponse;
 import io.github.rivon0507.courier.envoi.api.EnvoiCreateRequest;
+import io.github.rivon0507.courier.envoi.api.EnvoiDetailsResponse;
 import io.github.rivon0507.courier.envoi.api.EnvoiResponse;
 import io.github.rivon0507.courier.envoi.api.EnvoiUpdateRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,11 +22,11 @@ public class EnvoiController {
     private final EnvoiService envoiService;
 
     @PostMapping
-    public ResponseEntity<EnvoiResponse> post(@PathVariable Long workspaceId, @RequestBody EnvoiCreateRequest requestBody) {
-        EnvoiResponse created = envoiService.create(requestBody, workspaceId);
+    public ResponseEntity<EnvoiDetailsResponse> create(@PathVariable Long workspaceId, @RequestBody EnvoiCreateRequest requestBody) {
+        EnvoiDetailsResponse created = envoiService.create(requestBody, workspaceId);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{envoiId}")
-                .buildAndExpand(created.id())
+                .buildAndExpand(created.envoi().id())
                 .toUri();
         return ResponseEntity.created(location)
                 .body(created);
@@ -39,7 +39,7 @@ public class EnvoiController {
 
     @GetMapping
     public ResponseEntity<PagedResponse<EnvoiResponse>> getPage(
-            @PageableDefault(sort = "dateEnvoi", direction = Sort.Direction.DESC) Pageable page,
+            @PageableDefault(sort = "dateEnvoi") Pageable page,
             @PathVariable Long workspaceId) {
 
         return ResponseEntity.ok(envoiService.getPage(page, workspaceId));

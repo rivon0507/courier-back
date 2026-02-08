@@ -6,7 +6,6 @@ import io.github.rivon0507.courier.envoi.api.PieceResponse;
 import io.github.rivon0507.courier.envoi.api.PieceUpdateRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -31,7 +30,7 @@ public class PiecesController {
 
     @GetMapping
     public ResponseEntity<PagedResponse<PieceResponse>> getPiecesPage(
-            @PageableDefault(sort = "dateEnvoi", direction = Sort.Direction.DESC) Pageable page,
+            @PageableDefault(sort = "designation") Pageable page,
             @PathVariable String envoiId,
             @PathVariable Long workspaceId) {
 

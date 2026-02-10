@@ -6,6 +6,6 @@ public record EnvoiCreateRequest(
         String reference,
         String observation,
         String dateEnvoi,
-        List<PieceUpdateRequest> pieces
+        List<PieceCreateRequest> pieces
 ) {
 }

@@ -210,7 +210,7 @@ public class PiecesControllerIT {
         AtomicReference<Long> envoiId = new AtomicReference<>();
         restClient.post().uri("/workspaces/%d/envois".formatted(auth.workspaceId))
                 .header("Authorization", "Bearer %s".formatted(auth.accessToken))
-                .body("{\"dateEnvoi\": \"2025-12-25\"}")
+                .body("{\"dateEnvoi\": \"2025-12-25\", \"destinataire\": \"dest\"}")
                 .exchangeSuccessfully()
                 .expectBody()
                 .jsonPath("$.envoi.id").value(envoiId::set);
@@ -225,7 +225,7 @@ public class PiecesControllerIT {
         AtomicReference<Long> envoiId = new AtomicReference<>();
         restClient.post().uri("/workspaces/%d/envois".formatted(auth.workspaceId))
                 .header("Authorization", "Bearer %s".formatted(auth.accessToken))
-                .body("{\"dateEnvoi\": \"2025-12-25\", \"pieces\": %s}".formatted(piecesJson))
+                .body("{\"dateEnvoi\": \"2025-12-25\", , \"destinataire\": \"dest\", \"pieces\": %s}".formatted(piecesJson))
                 .exchangeSuccessfully().expectBody().jsonPath("$.envoi.id").value(envoiId::set);
 
         return envoiId.get();

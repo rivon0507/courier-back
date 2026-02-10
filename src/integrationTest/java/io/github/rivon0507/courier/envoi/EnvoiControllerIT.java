@@ -52,6 +52,7 @@ public class EnvoiControllerIT {
                 .body("""
                         {
                           "dateEnvoi": "2025-12-25",
+                          "destinataire": "dest",
                           "pieces": [
                             {
                               "designation": "des1",
@@ -72,6 +73,7 @@ public class EnvoiControllerIT {
                 .jsonPath("$.envoi.id").exists()
                 .jsonPath("$.envoi.reference").isEqualTo("ENVOI-1")
                 .jsonPath("$.envoi.dateEnvoi").isEqualTo("2025-12-25")
+                .jsonPath("$.envoi.destinataire").isEqualTo("dest")
                 .jsonPath("$.pieces[0].id").exists()
                 .jsonPath("$.pieces[0].designation").isEqualTo("des1")
                 .jsonPath("$.pieces[0].quantite").isEqualTo(1);
@@ -86,6 +88,7 @@ public class EnvoiControllerIT {
                 .body("""
                         {
                           "dateEnvoi": "2025-12-25",
+                          "destinataire": "dest",
                           "reference": "REF-22"
                         }""")
                 .exchangeSuccessfully()
@@ -133,11 +136,12 @@ public class EnvoiControllerIT {
         long envoiId = createEnvoi();
         restClient.put().uri("/workspaces/%d/envois/%d".formatted(auth.workspaceId, envoiId))
                 .header("Authorization", "Bearer %s".formatted(auth.accessToken))
-                .body("{\"dateEnvoi\": \"2000-01-01\", \"observation\": \"obs\"}")
+                .body("{\"dateEnvoi\": \"2000-01-01\", \"observation\": \"obs\", \"destinataire\": \"dest\"}")
                 .exchange().expectStatus().isOk()
                 .expectBody()
                 .jsonPath("$.dateEnvoi").isEqualTo("2000-01-01")
-                .jsonPath("$.observation").isEqualTo("obs");
+                .jsonPath("$.observation").isEqualTo("obs")
+                .jsonPath("$.destinataire").isEqualTo("dest");
     }
 
     @Test
@@ -145,7 +149,7 @@ public class EnvoiControllerIT {
         long envoiId = createEnvoi();
         restClient.put().uri("/workspaces/%d/envois/%d".formatted(auth.workspaceId, envoiId))
                 .header("Authorization", "Bearer %s".formatted(auth.accessToken))
-                .body("{\"reference\": \"REF-2000\", \"observation\": \"obs\"}")
+                .body("{\"reference\": \"REF-2000\", \"observation\": \"obs\", \"destinataire\": \"dest\"}")
                 .exchange().expectStatus().isOk()
                 .expectBody()
                 .jsonPath("$.reference").isEqualTo("ENVOI-1")
@@ -176,7 +180,7 @@ public class EnvoiControllerIT {
         AtomicReference<Long> envoiId = new AtomicReference<>();
         restClient.post().uri("/workspaces/%d/envois".formatted(auth.workspaceId))
                 .header("Authorization", "Bearer %s".formatted(auth.accessToken))
-                .body("{\"dateEnvoi\": \"2025-12-25\"}")
+                .body("{\"dateEnvoi\": \"2025-12-25\", \"destinataire\": \"dest\"}")
                 .exchangeSuccessfully()
                 .expectBody().jsonPath("$.envoi.id").value(envoiId::set);
         return envoiId.get();

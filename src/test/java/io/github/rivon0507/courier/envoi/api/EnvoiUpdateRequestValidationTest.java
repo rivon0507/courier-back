@@ -34,9 +34,11 @@ public class EnvoiUpdateRequestValidationTest {
     @TestFactory
     Stream<DynamicTest> failing() {
         return Stream.of(
-                new Case("missing dateEnvoi", dto("ref", "obs", null)),
-                new Case("reference 31 characters", dto("r".repeat(31), "obs", "2025-12-25")),
-                new Case("observation 61 characters", dto("ref", "o".repeat(61), "2025-12-25"))
+                new Case("missing destinataire", dto("ref", null, "obs", "2025-12-25")),
+                new Case("blank destinataire", dto("ref", "", "obs", "2025-12-25")),
+                new Case("missing dateEnvoi", dto("ref", "dest", "obs", null)),
+                new Case("reference 31 characters", dto("r".repeat(31), "dest", "obs", "2025-12-25")),
+                new Case("observation 61 characters", dto("ref", "dest", "o".repeat(61), "2025-12-25"))
         ).map(c -> DynamicTest.dynamicTest(c.name, () -> {
             Validator validator = validatorFactory.getValidator();
             Set<ConstraintViolation<EnvoiUpdateRequest>> validate = validator.validate(c.dto);
@@ -47,11 +49,11 @@ public class EnvoiUpdateRequestValidationTest {
     @TestFactory
     Stream<DynamicTest> passing() {
         return Stream.of(
-                new Case("null observation", dto("ref", null, "2025-12-25")),
-                new Case("empty observation", dto("ref", "", "2025-12-25")),
-                new Case("null reference", dto(null, "obs", "2025-12-25")),
-                new Case("reference 30 characters", dto("r".repeat(30), "obs", "2025-12-25")),
-                new Case("observation 60 characters", dto("ref", "o".repeat(60), "2025-12-25"))
+                new Case("null observation", dto("ref", "dest", null, "2025-12-25")),
+                new Case("empty observation", dto("ref", "dest", "", "2025-12-25")),
+                new Case("null reference", dto(null, "dest", "obs", "2025-12-25")),
+                new Case("reference 30 characters", dto("r".repeat(30), "dest", "obs", "2025-12-25")),
+                new Case("observation 60 characters", dto("ref", "dest", "o".repeat(60), "2025-12-25"))
         ).map(c -> DynamicTest.dynamicTest(c.name, () -> {
             Validator validator = validatorFactory.getValidator();
             Set<ConstraintViolation<EnvoiUpdateRequest>> validate = validator.validate(c.dto);
@@ -64,9 +66,15 @@ public class EnvoiUpdateRequestValidationTest {
 
     private @NonNull EnvoiUpdateRequest dto(
             String reference,
+            String destinataire,
             String observation,
             @Nullable String dateEnvoi
     ) {
-        return new EnvoiUpdateRequest(reference, observation, Optional.ofNullable(dateEnvoi).map(LocalDate::parse).orElse(null));
+        return new EnvoiUpdateRequest(
+                reference,
+                destinataire,
+                observation,
+                Optional.ofNullable(dateEnvoi).map(LocalDate::parse).orElse(null)
+        );
     }
 }

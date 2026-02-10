@@ -5,6 +5,7 @@ import java.time.LocalDate;
 public record EnvoiResponse(
         long id,
         String reference,
+        String destinataire,
         String observation,
         LocalDate dateEnvoi
 ) {

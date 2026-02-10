@@ -36,10 +36,12 @@ class EnvoiCreateRequestValidationTest {
     Stream<DynamicTest> failing() {
         return Stream.of(
                 new Case("missing dateEnvoi", dtoNoPiece("ref", "obs", null)),
-                new Case("missing piece designation", dto("ref", "obs", "2025-12-25", List.of(piece("", 1)))),
-                new Case("negative piece quantite", dto("ref", "obs", "2025-12-25", List.of(piece("des", -1)))),
-                new Case("piece with zero quantite", dto("ref", "obs", "2025-12-25", List.of(piece("des", 0)))),
-                new Case("designation with control characters", dto("ref", "obs", "2025-12-25", List.of(piece("de\0", 2)))),
+                new Case("missing destinataire", dto("ref", null, "obs", "2025-12-25", List.of(piece("", 1)))),
+                new Case("blank destinataire", dto("ref", "", "obs", "2025-12-25", List.of(piece("", 1)))),
+                new Case("missing piece designation", dto("ref", "dest", "obs", "2025-12-25", List.of(piece("", 1)))),
+                new Case("negative piece quantite", dto("ref", "dest", "obs", "2025-12-25", List.of(piece("des", -1)))),
+                new Case("piece with zero quantite", dto("ref", "dest", "obs", "2025-12-25", List.of(piece("des", 0)))),
+                new Case("designation with control characters", dto("ref", "dest", "obs", "2025-12-25", List.of(piece("de\0", 2)))),
                 new Case("reference 31 characters", dtoNoPiece("r".repeat(31), "obs", "2025-12-25")),
                 new Case("observation 61 characters", dtoNoPiece("ref", "o".repeat(61), "2025-12-25"))
         ).map(c -> DynamicTest.dynamicTest(c.name, () -> {
@@ -53,7 +55,7 @@ class EnvoiCreateRequestValidationTest {
     Stream<DynamicTest> passing() {
         return Stream.of(
                 new Case("null observation", dtoNoPiece("ref", null, "2025-12-25")),
-                new Case("empty observation", dtoNoPiece("ref", "", "2025-12-25")),
+                new Case("blank observation", dtoNoPiece("ref", "", "2025-12-25")),
                 new Case("null reference", dtoNoPiece(null, "obs", "2025-12-25")),
                 new Case("reference 30 characters", dtoNoPiece("r".repeat(30), "obs", "2025-12-25")),
                 new Case("observation 60 characters", dtoNoPiece("ref", "o".repeat(60), "2025-12-25"))
@@ -73,11 +75,17 @@ class EnvoiCreateRequestValidationTest {
 
     private @NonNull EnvoiCreateRequest dto(
             String reference,
-            String observation,
+            String destinataire, String observation,
             @Nullable String dateEnvoi,
             List<PieceCreateRequest> pieces
     ) {
-        return new EnvoiCreateRequest(reference, observation, Optional.ofNullable(dateEnvoi).map(LocalDate::parse).orElse(null), pieces);
+        return new EnvoiCreateRequest(
+                reference,
+                observation,
+                destinataire,
+                Optional.ofNullable(dateEnvoi).map(LocalDate::parse).orElse(null),
+                pieces
+        );
     }
 
     private @NonNull EnvoiCreateRequest dtoNoPiece(
@@ -85,6 +93,6 @@ class EnvoiCreateRequestValidationTest {
             String observation,
             String dateEnvoi
     ) {
-        return dto(reference, observation, dateEnvoi, List.of());
+        return dto(reference, "dest", observation, dateEnvoi, List.of());
     }
 }

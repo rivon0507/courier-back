@@ -103,7 +103,7 @@ class EnvoiControllerPaginationSliceTest {
             Sort.Order order = p.getSort().stream().findFirst().orElseThrow();
 
             return new PagedResponse<>(
-                    List.of(new EnvoiResponse(1L, "REF", null, LocalDate.of(2026, 2, 10))),
+                    List.of(new EnvoiResponse(1L, "REF", "dest", null, LocalDate.of(2026, 2, 10))),
                     new PageInfo(p.getPageNumber(), p.getPageSize(), 0, 0),
                     new SortInfo(order)
             );

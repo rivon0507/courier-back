@@ -117,7 +117,7 @@ public class EnvoiControllerIT {
 
     @Test
     void get_one_with_nonexistent_envoi_id_returns404() {
-        restClient.get().uri("/workspaces/%d/envois".formatted(auth.workspaceId))
+        restClient.get().uri("/workspaces/%d/envois/%d".formatted(auth.workspaceId, 999))
                 .header("Authorization", "Bearer %s".formatted(auth.accessToken))
                 .exchange().expectStatus().isNotFound();
     }
@@ -149,7 +149,7 @@ public class EnvoiControllerIT {
         long envoiId = createEnvoi();
         restClient.put().uri("/workspaces/%d/envois/%d".formatted(auth.workspaceId, envoiId))
                 .header("Authorization", "Bearer %s".formatted(auth.accessToken))
-                .body("{\"reference\": \"REF-2000\", \"observation\": \"obs\", \"destinataire\": \"dest\"}")
+                .body("{\"dateEnvoi\": \"2025-12-25\" ,\"reference\": \"REF-2000\", \"observation\": \"obs\", \"destinataire\": \"dest\"}")
                 .exchange().expectStatus().isOk()
                 .expectBody()
                 .jsonPath("$.reference").isEqualTo("ENVOI-1")
@@ -177,7 +177,7 @@ public class EnvoiControllerIT {
     }
 
     private long createEnvoi() {
-        AtomicReference<Long> envoiId = new AtomicReference<>();
+        AtomicReference<Integer> envoiId = new AtomicReference<>();
         restClient.post().uri("/workspaces/%d/envois".formatted(auth.workspaceId))
                 .header("Authorization", "Bearer %s".formatted(auth.accessToken))
                 .body("{\"dateEnvoi\": \"2025-12-25\", \"destinataire\": \"dest\"}")
@@ -188,7 +188,7 @@ public class EnvoiControllerIT {
 
     private AuthResult login() {
         AtomicReference<String> accessToken = new AtomicReference<>();
-        AtomicReference<Long> workspaceId = new AtomicReference<>();
+        AtomicReference<Integer> workspaceId = new AtomicReference<>();
         restClient.post().uri("/auth/login")
                 .body(Map.of("email", "user@example.com", "password", "password"))
                 .exchangeSuccessfully()

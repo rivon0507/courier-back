@@ -37,7 +37,7 @@ public class Envoi {
     @JoinColumn(name = "workspace_id", nullable = false)
     private Workspace workspace;
 
-    @OneToMany(mappedBy = "envoi")
+    @OneToMany(mappedBy = "envoi", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<EnvoiPiece> pieces;
 
     @CreationTimestamp

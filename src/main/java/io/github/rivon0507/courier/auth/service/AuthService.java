@@ -198,7 +198,8 @@ public class AuthService {
                 jwt.getTokenValue(),
                 "Bearer",
                 expiresInSeconds,
-                userMapper.principalToUserDto(principal)
+                userMapper.principalToUserDto(principal),
+                principal.defaultWorkspaceId()
         );
     }
 

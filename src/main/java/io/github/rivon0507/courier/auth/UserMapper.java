@@ -17,6 +17,7 @@ public interface UserMapper {
     @Mapping(target = "defaultWorkspace", ignore = true)
     User from(String email, String displayName, Role role);
 
+    @Mapping(target = "defaultWorkspaceId", source = "user.defaultWorkspace.id")
     AppUserPrincipal toUserPrincipal(User user);
 
     UserDto toUserDto(User user);

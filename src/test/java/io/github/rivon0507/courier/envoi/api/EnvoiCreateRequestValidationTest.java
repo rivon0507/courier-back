@@ -75,14 +75,15 @@ class EnvoiCreateRequestValidationTest {
 
     private @NonNull EnvoiCreateRequest dto(
             String reference,
-            String destinataire, String observation,
+            String destinataire,
+            String observation,
             @Nullable String dateEnvoi,
             List<PieceCreateRequest> pieces
     ) {
         return new EnvoiCreateRequest(
                 reference,
-                observation,
                 destinataire,
+                observation,
                 Optional.ofNullable(dateEnvoi).map(LocalDate::parse).orElse(null),
                 pieces
         );

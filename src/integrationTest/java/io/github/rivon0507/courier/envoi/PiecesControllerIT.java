@@ -94,8 +94,7 @@ public class PiecesControllerIT {
         long envoi2 = createEnvoiWithPieces(List.of(new PieceSeed("p2", 1)));
         assertThat(envoiRepository.count()).isEqualTo(2);
         assertThat(pieceRepository.count()).isEqualTo(2);
-        restClient.get()
-                .uri("/workspaces/%d/envois/%d/pieces".formatted(auth.workspaceId, envoi1))
+        restClient.get().uri("/workspaces/%d/envois/%d/pieces".formatted(auth.workspaceId, envoi1))
                 .header("Authorization", "Bearer %s".formatted(auth.accessToken))
                 .exchange().expectStatus().isOk()
                 .expectBody()
@@ -181,9 +180,13 @@ public class PiecesControllerIT {
     @Test
     void delete_nonexistent_piece_returns_204() {
         long envoiId = createEnvoi();
-        createPieces(envoiId, List.of(new PieceSeed("a", 1)));
+        createPieces(envoiId, List.of(
+                new PieceSeed("a", 1),
+                new PieceSeed("b", 2)
+        ));
+
         long before = pieceRepository.count();
-        restClient.delete().uri("/workspaces/%d/envois/%d/pieces".formatted(auth.workspaceId, envoiId))
+        restClient.delete().uri("/workspaces/%d/envois/%d/pieces?ids=%d".formatted(auth.workspaceId, envoiId, 999))
                 .header("Authorization", "Bearer %s".formatted(auth.accessToken))
                 .exchange().expectStatus().isNoContent();
         assertThat(pieceRepository.count()).isEqualTo(before);
@@ -207,7 +210,7 @@ public class PiecesControllerIT {
     }
 
     private long createEnvoi() {
-        AtomicReference<Long> envoiId = new AtomicReference<>();
+        AtomicReference<Integer> envoiId = new AtomicReference<>();
         restClient.post().uri("/workspaces/%d/envois".formatted(auth.workspaceId))
                 .header("Authorization", "Bearer %s".formatted(auth.accessToken))
                 .body("{\"dateEnvoi\": \"2025-12-25\", \"destinataire\": \"dest\"}")
@@ -222,10 +225,10 @@ public class PiecesControllerIT {
                 .map(p -> "{\"designation\": \"%s\", \"quantite\": %d}".formatted(p.designation, p.quantite))
                 .collect(Collectors.joining(",", "[", "]"));
 
-        AtomicReference<Long> envoiId = new AtomicReference<>();
+        AtomicReference<Integer> envoiId = new AtomicReference<>();
         restClient.post().uri("/workspaces/%d/envois".formatted(auth.workspaceId))
                 .header("Authorization", "Bearer %s".formatted(auth.accessToken))
-                .body("{\"dateEnvoi\": \"2025-12-25\", , \"destinataire\": \"dest\", \"pieces\": %s}".formatted(piecesJson))
+                .body("{\"dateEnvoi\": \"2025-12-25\", \"destinataire\": \"dest\", \"pieces\": %s}".formatted(piecesJson))
                 .exchangeSuccessfully().expectBody().jsonPath("$.envoi.id").value(envoiId::set);
 
         return envoiId.get();
@@ -236,8 +239,8 @@ public class PiecesControllerIT {
                 .map(p -> "{\"designation\": \"%s\", \"quantite\": %d}".formatted(p.designation, p.quantite))
                 .collect(Collectors.joining(",", "[", "]"));
 
-        AtomicReference<Long> id1 = new AtomicReference<>();
-        AtomicReference<Long> id2 = new AtomicReference<>();
+        AtomicReference<Integer> id1 = new AtomicReference<>();
+        AtomicReference<Integer> id2 = new AtomicReference<>();
 
         restClient.post().uri("/workspaces/%d/envois/%d/pieces".formatted(auth.workspaceId, envoiId))
                 .header("Authorization", "Bearer %s".formatted(auth.accessToken))
@@ -252,7 +255,7 @@ public class PiecesControllerIT {
 
     private AuthResult login() {
         AtomicReference<String> accessToken = new AtomicReference<>();
-        AtomicReference<Long> workspaceId = new AtomicReference<>();
+        AtomicReference<Integer> workspaceId = new AtomicReference<>();
         restClient.post()
                 .uri("/auth/login")
                 .body(Map.of("email", "user@example.com", "password", "password"))

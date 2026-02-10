@@ -1,0 +1,2 @@
+ALTER TABLE envoi
+    ALTER COLUMN reference DROP NOT NULL;

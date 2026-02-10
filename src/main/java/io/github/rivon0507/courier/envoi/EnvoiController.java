@@ -51,7 +51,7 @@ public class EnvoiController {
 
     @PutMapping("/{envoiId}")
     public ResponseEntity<EnvoiResponse> update(
-            @PathVariable String envoiId,
+            @PathVariable Long envoiId,
             @Valid @RequestBody EnvoiUpdateRequest requestBody,
             @PathVariable Long workspaceId) {
 
@@ -59,7 +59,7 @@ public class EnvoiController {
     }
 
     @DeleteMapping("/{envoiId}")
-    public ResponseEntity<Void> delete(@PathVariable String envoiId, @PathVariable Long workspaceId) {
+    public ResponseEntity<Void> delete(@PathVariable Long envoiId, @PathVariable Long workspaceId) {
         envoiService.delete(envoiId, workspaceId);
         return ResponseEntity.noContent().build();
     }

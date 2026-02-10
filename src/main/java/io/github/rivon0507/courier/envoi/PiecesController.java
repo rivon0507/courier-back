@@ -22,7 +22,7 @@ public class PiecesController {
 
     @PostMapping
     public ResponseEntity<List<PieceResponse>> createPieces(
-            @PathVariable String envoiId,
+            @PathVariable Long envoiId,
             @Valid @RequestBody List<PieceCreateRequest> requestBody,
             @PathVariable Long workspaceId) {
 
@@ -32,7 +32,7 @@ public class PiecesController {
     @GetMapping
     public ResponseEntity<PagedResponse<PieceResponse>> getPiecesPage(
             @PageableDefault(sort = "designation") Pageable page,
-            @PathVariable String envoiId,
+            @PathVariable Long envoiId,
             @PathVariable Long workspaceId) {
 
         return ResponseEntity.ok(envoiService.getPiecesPage(envoiId, page, workspaceId));
@@ -40,7 +40,7 @@ public class PiecesController {
 
     @PutMapping
     public ResponseEntity<List<PieceResponse>> updatePieces(
-            @PathVariable String envoiId,
+            @PathVariable Long envoiId,
             @Valid @RequestBody List<PieceUpdateRequest> requestBody,
             @PathVariable Long workspaceId) {
 
@@ -49,7 +49,7 @@ public class PiecesController {
 
     @DeleteMapping
     public ResponseEntity<Void> deletePieces(
-            @PathVariable String envoiId,
+            @PathVariable Long envoiId,
             @RequestParam(name = "ids") List<Long> ids,
             @PathVariable Long workspaceId) {
 

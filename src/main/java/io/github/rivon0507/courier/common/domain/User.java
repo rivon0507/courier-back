@@ -35,7 +35,7 @@ public class User {
     @Column(name = "is_active", nullable = false)
     private boolean active = true;
 
-    @OneToOne(cascade = CascadeType.PERSIST)
+    @OneToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "default_workspace_id")
     private Workspace defaultWorkspace;
 

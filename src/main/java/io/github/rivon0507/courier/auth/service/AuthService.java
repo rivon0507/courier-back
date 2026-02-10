@@ -59,7 +59,7 @@ public class AuthService {
 
     /**
      * Controller should pass the device_id cookie if present. If absent, we create a new one.
-     * This method revokes any currently-active session(s) for that device_id to prevent "dangling" tokens.
+     * This method revokes any currently active session(s) for that device_id to prevent "dangling" tokens.
      */
     @Transactional
     public AuthSessionResult login(@NonNull String username, @NonNull String password, @Nullable String deviceId) {
@@ -105,7 +105,7 @@ public class AuthService {
         Workspace defaultWorkspace = new Workspace();
         defaultWorkspace.setOwner(saved);
         saved.setDefaultWorkspace(defaultWorkspace);
-        userRepository.save(user);
+        userRepository.save(saved);
 
         AppUserPrincipal principal = userMapper.toUserPrincipal(saved);
         Jwt jwt = encodeAccessToken(principal);

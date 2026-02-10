@@ -18,7 +18,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class EnvoiUpdateRequestValidationTest {
+public class EnvoiUpdateRequestValidationTest {
     private static ValidatorFactory validatorFactory;
 
     @BeforeAll
@@ -35,7 +35,6 @@ class EnvoiUpdateRequestValidationTest {
     Stream<DynamicTest> failing() {
         return Stream.of(
                 new Case("missing dateEnvoi", dto("ref", "obs", null)),
-                new Case("designation with control characters", dto("ref", "obs", "2025-12-25")),
                 new Case("reference 31 characters", dto("r".repeat(31), "obs", "2025-12-25")),
                 new Case("observation 61 characters", dto("ref", "o".repeat(61), "2025-12-25"))
         ).map(c -> DynamicTest.dynamicTest(c.name, () -> {

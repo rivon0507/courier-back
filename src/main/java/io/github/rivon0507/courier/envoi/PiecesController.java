@@ -49,10 +49,10 @@ public class PiecesController {
     @DeleteMapping
     public ResponseEntity<Void> deletePieces(
             @PathVariable String envoiId,
-            @RequestBody List<Long> requestBody,
+            @RequestParam(name = "ids") List<Long> ids,
             @PathVariable Long workspaceId) {
 
-        envoiService.deletePieces(envoiId, requestBody, workspaceId);
+        envoiService.deletePieces(envoiId, ids, workspaceId);
         return ResponseEntity.noContent().build();
     }
 }

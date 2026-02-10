@@ -256,6 +256,7 @@ public class AuthControllerIT {
                     .expectBody();
             String accessToken = assertAuthResponseAndExtractToken(body, "user@example.com", "User");
             assertTokenWorks(accessToken);
+            body.jsonPath("$.workspaceId").isNumber();
         }
 
         @Test
@@ -337,6 +338,7 @@ public class AuthControllerIT {
                     .as("The user should have a default workspace")
                     .extracting(User::getDefaultWorkspace)
                     .matches(w -> w != null && Objects.equals(w.getOwner().getId(), userOptional.get().getId()));
+            body.jsonPath("$.workspaceId").isNumber();
         }
     }
 

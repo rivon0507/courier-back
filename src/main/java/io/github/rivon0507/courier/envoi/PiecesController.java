@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/{workspaceId}/{envoiId}/pieces")
+@RequestMapping("/workspaces/{workspaceId}/envois/{envoiId}/pieces")
 @RequiredArgsConstructor
 public class PiecesController {
 

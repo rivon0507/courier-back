@@ -15,7 +15,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.net.URI;
 
 @RestController
-@RequestMapping("/workspace/{workspaceId}/envoi")
+@RequestMapping("/workspaces/{workspaceId}/envois")
 @RequiredArgsConstructor
 public class EnvoiController {
 

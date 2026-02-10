@@ -61,7 +61,10 @@ public class SecurityConfiguration {
                                 "/auth/refresh",
                                 "/auth/logout"
                         ).permitAll()
-                        .requestMatchers("/_security/ping").authenticated()
+                        .requestMatchers(
+                                "/_security/ping",
+                                "/workspaces/**"
+                        ).authenticated()
                         .anyRequest().denyAll()
                 )
                 .oauth2ResourceServer(oauth -> oauth

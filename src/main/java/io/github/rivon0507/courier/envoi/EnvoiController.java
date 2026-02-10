@@ -5,6 +5,7 @@ import io.github.rivon0507.courier.envoi.api.EnvoiCreateRequest;
 import io.github.rivon0507.courier.envoi.api.EnvoiDetailsResponse;
 import io.github.rivon0507.courier.envoi.api.EnvoiResponse;
 import io.github.rivon0507.courier.envoi.api.EnvoiUpdateRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -22,7 +23,10 @@ public class EnvoiController {
     private final EnvoiService envoiService;
 
     @PostMapping
-    public ResponseEntity<EnvoiDetailsResponse> create(@PathVariable Long workspaceId, @RequestBody EnvoiCreateRequest requestBody) {
+    public ResponseEntity<EnvoiDetailsResponse> create(
+            @PathVariable Long workspaceId,
+            @Valid @RequestBody EnvoiCreateRequest requestBody) {
+
         EnvoiDetailsResponse created = envoiService.create(requestBody, workspaceId);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{envoiId}")
@@ -48,7 +52,7 @@ public class EnvoiController {
     @PutMapping("/{envoiId}")
     public ResponseEntity<EnvoiResponse> update(
             @PathVariable String envoiId,
-            @RequestBody EnvoiUpdateRequest requestBody,
+            @Valid @RequestBody EnvoiUpdateRequest requestBody,
             @PathVariable Long workspaceId) {
 
         return ResponseEntity.ok(envoiService.update(envoiId, requestBody, workspaceId));

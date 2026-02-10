@@ -4,6 +4,7 @@ import io.github.rivon0507.courier.common.pagination.PagedResponse;
 import io.github.rivon0507.courier.envoi.api.PieceCreateRequest;
 import io.github.rivon0507.courier.envoi.api.PieceResponse;
 import io.github.rivon0507.courier.envoi.api.PieceUpdateRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -22,7 +23,7 @@ public class PiecesController {
     @PostMapping
     public ResponseEntity<List<PieceResponse>> createPieces(
             @PathVariable String envoiId,
-            @RequestBody List<PieceCreateRequest> requestBody,
+            @Valid @RequestBody List<PieceCreateRequest> requestBody,
             @PathVariable Long workspaceId) {
 
         return ResponseEntity.ok(envoiService.createPieces(envoiId, requestBody, workspaceId));
@@ -40,7 +41,7 @@ public class PiecesController {
     @PutMapping
     public ResponseEntity<List<PieceResponse>> updatePieces(
             @PathVariable String envoiId,
-            @RequestBody List<PieceUpdateRequest> requestBody,
+            @Valid @RequestBody List<PieceUpdateRequest> requestBody,
             @PathVariable Long workspaceId) {
 
         return ResponseEntity.ok(envoiService.updatePieces(envoiId, requestBody, workspaceId));

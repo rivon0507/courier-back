@@ -5,6 +5,7 @@ import io.github.rivon0507.courier.common.api.PieceCreateRequest;
 import io.github.rivon0507.courier.common.api.PieceResponse;
 import io.github.rivon0507.courier.common.api.PieceUpdateRequest;
 import io.github.rivon0507.courier.common.pagination.PagedResponse;
+import io.github.rivon0507.courier.reception.service.ReceptionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;

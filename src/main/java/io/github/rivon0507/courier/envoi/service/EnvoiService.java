@@ -1,4 +1,4 @@
-package io.github.rivon0507.courier.envoi;
+package io.github.rivon0507.courier.envoi.service;
 
 import io.github.rivon0507.courier.common.api.PieceCreateRequest;
 import io.github.rivon0507.courier.common.api.PieceResponse;
@@ -6,6 +6,8 @@ import io.github.rivon0507.courier.common.api.PieceUpdateRequest;
 import io.github.rivon0507.courier.common.domain.Workspace;
 import io.github.rivon0507.courier.common.pagination.PagedResponse;
 import io.github.rivon0507.courier.common.persistence.WorkspaceRepository;
+import io.github.rivon0507.courier.common.web.error.DuplicatePieceIdException;
+import io.github.rivon0507.courier.common.web.error.WorkspaceNotFoundException;
 import io.github.rivon0507.courier.envoi.api.EnvoiCreateRequest;
 import io.github.rivon0507.courier.envoi.api.EnvoiDetailsResponse;
 import io.github.rivon0507.courier.envoi.api.EnvoiResponse;
@@ -14,6 +16,8 @@ import io.github.rivon0507.courier.envoi.domain.Envoi;
 import io.github.rivon0507.courier.envoi.domain.EnvoiPiece;
 import io.github.rivon0507.courier.envoi.persistence.EnvoiPieceRepository;
 import io.github.rivon0507.courier.envoi.persistence.EnvoiRepository;
+import io.github.rivon0507.courier.envoi.web.error.EnvoiNotFoundException;
+import io.github.rivon0507.courier.envoi.web.error.EnvoiPieceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;

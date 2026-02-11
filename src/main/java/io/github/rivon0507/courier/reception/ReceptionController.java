@@ -6,6 +6,7 @@ import io.github.rivon0507.courier.reception.api.ReceptionCreateRequest;
 import io.github.rivon0507.courier.reception.api.ReceptionDetailsResponse;
 import io.github.rivon0507.courier.reception.api.ReceptionResponse;
 import io.github.rivon0507.courier.reception.api.ReceptionUpdateRequest;
+import io.github.rivon0507.courier.reception.service.ReceptionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;

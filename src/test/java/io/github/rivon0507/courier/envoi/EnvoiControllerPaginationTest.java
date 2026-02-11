@@ -4,6 +4,7 @@ import io.github.rivon0507.courier.common.pagination.PageInfo;
 import io.github.rivon0507.courier.common.pagination.PagedResponse;
 import io.github.rivon0507.courier.common.pagination.SortInfo;
 import io.github.rivon0507.courier.envoi.api.EnvoiResponse;
+import io.github.rivon0507.courier.envoi.service.EnvoiService;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;

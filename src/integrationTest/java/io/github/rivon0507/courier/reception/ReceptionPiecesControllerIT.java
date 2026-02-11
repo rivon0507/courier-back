@@ -236,7 +236,7 @@ public class ReceptionPiecesControllerIT {
         AtomicReference<Integer> receptionId = new AtomicReference<>();
         restClient.post().uri("/workspaces/%d/receptions".formatted(auth.workspaceId()))
                 .header("Authorization", "Bearer %s".formatted(auth.accessToken()))
-                .body("{\"dateReception\": \"2025-12-25\", \"destinataire\": \"dest\", \"pieces\": %s}".formatted(piecesJson))
+                .body("{\"dateReception\": \"2025-12-25\", \"expediteur\": \"exp\", \"reference\": \"REF\", \"pieces\": %s}".formatted(piecesJson))
                 .exchangeSuccessfully().expectBody().jsonPath("$.reception.id").value(receptionId::set);
 
         return receptionId.get();

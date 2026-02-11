@@ -9,6 +9,6 @@ import java.time.LocalDate;
 public record ReceptionUpdateRequest(
         @Length(max = 30) @NotBlank @Length(max = 30) String reference,
         @NotBlank String expediteur,
-        @NotNull LocalDate dateEnvoi
+        @NotNull LocalDate dateReception
 ) {
 }

@@ -6,6 +6,7 @@ import io.github.rivon0507.courier.envoi.api.EnvoiCreateRequest;
 import io.github.rivon0507.courier.envoi.api.EnvoiDetailsResponse;
 import io.github.rivon0507.courier.envoi.api.EnvoiResponse;
 import io.github.rivon0507.courier.envoi.api.EnvoiUpdateRequest;
+import io.github.rivon0507.courier.envoi.service.EnvoiService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;

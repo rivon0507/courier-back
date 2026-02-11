@@ -4,6 +4,7 @@ import io.github.rivon0507.courier.IntegrationTest;
 import io.github.rivon0507.courier.TestUtils;
 import io.github.rivon0507.courier.auth.service.AuthService;
 import io.github.rivon0507.courier.common.persistence.UserRepository;
+import io.github.rivon0507.courier.reception.persistence.ReceptionPieceRepository;
 import io.github.rivon0507.courier.reception.persistence.ReceptionRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,6 +31,8 @@ public class ReceptionControllerIT {
     private ReceptionRepository receptionRepository;
 
     private TestUtils.AuthResult auth;
+    @Autowired
+    private ReceptionPieceRepository receptionPieceRepository;
 
     @BeforeEach
     void setUp() {
@@ -78,7 +81,7 @@ public class ReceptionControllerIT {
                 .jsonPath("$.pieces[0].quantite").isEqualTo(1);
 
         assertThat(receptionRepository.count()).as("The reception should have been created").isOne();
-        assertThat(receptionRepository.findAll().getFirst().getPieces()).hasSize(3);
+        assertThat(receptionPieceRepository.count()).isEqualTo(3);
     }
 
     @Test

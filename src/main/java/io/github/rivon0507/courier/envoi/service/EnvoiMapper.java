@@ -1,4 +1,4 @@
-package io.github.rivon0507.courier.envoi;
+package io.github.rivon0507.courier.envoi.service;
 
 import io.github.rivon0507.courier.envoi.api.EnvoiCreateRequest;
 import io.github.rivon0507.courier.envoi.api.EnvoiDetailsResponse;
@@ -13,6 +13,7 @@ public interface EnvoiMapper {
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "pieces", ignore = true)
     Envoi fromCreateRequest(EnvoiCreateRequest dto);
 
     @Mapping(target = "envoi", source = "entity")

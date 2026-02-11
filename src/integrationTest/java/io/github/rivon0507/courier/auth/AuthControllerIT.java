@@ -6,6 +6,7 @@ import io.github.rivon0507.courier.auth.domain.RefreshTokenRepository;
 import io.github.rivon0507.courier.auth.service.RefreshTokenHasher;
 import io.github.rivon0507.courier.common.domain.Role;
 import io.github.rivon0507.courier.common.domain.User;
+import io.github.rivon0507.courier.common.domain.Workspace;
 import io.github.rivon0507.courier.common.persistence.UserRepository;
 import org.apache.hc.client5.http.cookie.BasicCookieStore;
 import org.apache.hc.client5.http.cookie.Cookie;
@@ -79,6 +80,9 @@ public class AuthControllerIT {
         user.setPasswordHash(passwordEncoder.encode("password"));
         user.setActive(true);
         user.setRole(Role.USER);
+        Workspace wp1 = new Workspace();
+        wp1.setOwner(user);
+        user.setDefaultWorkspace(wp1);
         userRepository.save(user);
 
         var inactiveUser = new User();
@@ -87,6 +91,9 @@ public class AuthControllerIT {
         inactiveUser.setPasswordHash(passwordEncoder.encode("password"));
         inactiveUser.setActive(false);
         inactiveUser.setRole(Role.USER);
+        Workspace wp2 = new Workspace();
+        wp2.setOwner(inactiveUser);
+        inactiveUser.setDefaultWorkspace(wp2);
         userRepository.save(inactiveUser);
     }
 
@@ -256,6 +263,7 @@ public class AuthControllerIT {
                     .expectBody();
             String accessToken = assertAuthResponseAndExtractToken(body, "user@example.com", "User");
             assertTokenWorks(accessToken);
+            body.jsonPath("$.workspaceId").isNumber();
         }
 
         @Test
@@ -337,6 +345,7 @@ public class AuthControllerIT {
                     .as("The user should have a default workspace")
                     .extracting(User::getDefaultWorkspace)
                     .matches(w -> w != null && Objects.equals(w.getOwner().getId(), userOptional.get().getId()));
+            body.jsonPath("$.workspaceId").isNumber();
         }
     }
 

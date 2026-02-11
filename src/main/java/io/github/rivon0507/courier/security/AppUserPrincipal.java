@@ -14,7 +14,8 @@ public record AppUserPrincipal(
         String displayName,
         String role,
         String passwordHash,
-        boolean active
+        boolean active,
+        Long defaultWorkspaceId
 ) implements UserDetails {
 
     @Override

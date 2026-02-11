@@ -25,7 +25,8 @@ class AppUserDetailsService implements UserDetailsService {
                 user.getDisplayName(),
                 user.getRole().name(),
                 user.getPasswordHash(),
-                user.isActive()
+                user.isActive(),
+                user.getDefaultWorkspace().getId()
         );
     }
 }

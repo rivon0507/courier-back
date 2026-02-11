@@ -4,6 +4,7 @@ public record AuthenticationResponse(
         String accessToken,
         String tokenType,
         Long expiresIn,
-        UserDto user
+        UserDto user,
+        long workspaceId
 ) {
 }

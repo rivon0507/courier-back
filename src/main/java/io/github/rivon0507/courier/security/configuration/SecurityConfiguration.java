@@ -61,7 +61,10 @@ public class SecurityConfiguration {
                                 "/auth/refresh",
                                 "/auth/logout"
                         ).permitAll()
-                        .requestMatchers("/_security/ping").authenticated()
+                        .requestMatchers(
+                                "/_security/ping",
+                                "/workspaces/**"
+                        ).authenticated()
                         .anyRequest().denyAll()
                 )
                 .oauth2ResourceServer(oauth -> oauth
@@ -99,6 +102,7 @@ public class SecurityConfiguration {
 
         return jwt -> {
             Collection<GrantedAuthority> authorities = new ArrayList<>(scopes.convert(jwt));
+            if (jwt.getClaim("userId") == null) throw new JwtException("Missing claim: userId");
             Object rolesClaim = jwt.getClaims().get("roles");
             if (rolesClaim instanceof Collection<?> roles) {
                 for (Object r : roles) {

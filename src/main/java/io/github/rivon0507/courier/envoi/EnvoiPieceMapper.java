@@ -1,8 +1,8 @@
 package io.github.rivon0507.courier.envoi;
 
-import io.github.rivon0507.courier.envoi.api.PieceCreateRequest;
-import io.github.rivon0507.courier.envoi.api.PieceResponse;
-import io.github.rivon0507.courier.envoi.api.PieceUpdateRequest;
+import io.github.rivon0507.courier.common.api.PieceCreateRequest;
+import io.github.rivon0507.courier.common.api.PieceResponse;
+import io.github.rivon0507.courier.common.api.PieceUpdateRequest;
 import io.github.rivon0507.courier.envoi.domain.EnvoiPiece;
 import org.mapstruct.*;
 

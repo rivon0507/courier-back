@@ -1,4 +1,4 @@
-package io.github.rivon0507.courier.envoi.api;
+package io.github.rivon0507.courier.reception.api;
 
 import io.github.rivon0507.courier.common.api.PieceCreateRequest;
 import jakarta.validation.Valid;
@@ -9,11 +9,10 @@ import org.hibernate.validator.constraints.Length;
 import java.time.LocalDate;
 import java.util.List;
 
-public record EnvoiCreateRequest(
-        @Length(max = 30) String reference,
-        @NotBlank String destinataire,
-        @Length(max = 60) String observation,
-        @NotNull LocalDate dateEnvoi,
+public record ReceptionCreateRequest(
+        @Length(max = 30) @NotBlank String reference,
+        @NotBlank String expediteur,
+        @NotNull LocalDate dateReception,
         @Valid List<PieceCreateRequest> pieces
 ) {
 }

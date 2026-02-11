@@ -1,10 +1,10 @@
 package io.github.rivon0507.courier.envoi;
 
 import io.github.rivon0507.courier.common.annotation.CurrentUserId;
+import io.github.rivon0507.courier.common.api.PieceCreateRequest;
+import io.github.rivon0507.courier.common.api.PieceResponse;
+import io.github.rivon0507.courier.common.api.PieceUpdateRequest;
 import io.github.rivon0507.courier.common.pagination.PagedResponse;
-import io.github.rivon0507.courier.envoi.api.PieceCreateRequest;
-import io.github.rivon0507.courier.envoi.api.PieceResponse;
-import io.github.rivon0507.courier.envoi.api.PieceUpdateRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -17,7 +17,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/workspaces/{workspaceId}/envois/{envoiId}/pieces")
 @RequiredArgsConstructor
-public class PiecesController {
+public class EnvoiPiecesController {
 
     private final EnvoiService envoiService;
 

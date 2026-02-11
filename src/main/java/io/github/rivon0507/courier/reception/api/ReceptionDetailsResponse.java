@@ -1,11 +1,11 @@
-package io.github.rivon0507.courier.envoi.api;
+package io.github.rivon0507.courier.reception.api;
 
 import io.github.rivon0507.courier.common.api.PieceResponse;
 
 import java.util.List;
 
-public record EnvoiDetailsResponse(
-        EnvoiResponse envoi,
+public record ReceptionDetailsResponse(
+        ReceptionResponse reception,
         List<PieceResponse> pieces
 ) {
 }

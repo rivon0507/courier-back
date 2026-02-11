@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @IntegrationTest
-public class PiecesControllerIT {
+public class EnvoiPiecesControllerIT {
 
     @Autowired
     private RestTestClient restClient;

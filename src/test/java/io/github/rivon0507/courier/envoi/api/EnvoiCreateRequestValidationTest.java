@@ -1,5 +1,6 @@
 package io.github.rivon0507.courier.envoi.api;
 
+import io.github.rivon0507.courier.common.api.PieceCreateRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;

@@ -1,4 +1,4 @@
-package io.github.rivon0507.courier.envoi.api;
+package io.github.rivon0507.courier.common.api;
 
 public record PieceResponse(
         long id,

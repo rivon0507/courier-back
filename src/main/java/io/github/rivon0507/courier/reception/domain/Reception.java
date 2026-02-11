@@ -33,7 +33,7 @@ public class Reception {
     @JoinColumn(name = "workspace_id", nullable = false)
     private Workspace workspace;
 
-    @OneToMany(mappedBy = "reception")
+    @OneToMany(mappedBy = "reception", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<ReceptionPiece> pieces;
 
     @CreationTimestamp

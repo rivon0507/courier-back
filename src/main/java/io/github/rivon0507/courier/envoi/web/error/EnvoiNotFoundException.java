@@ -1,4 +1,4 @@
-package io.github.rivon0507.courier.envoi;
+package io.github.rivon0507.courier.envoi.web.error;
 
 import io.github.rivon0507.courier.common.web.error.ApiException;
 import org.springframework.http.HttpStatus;

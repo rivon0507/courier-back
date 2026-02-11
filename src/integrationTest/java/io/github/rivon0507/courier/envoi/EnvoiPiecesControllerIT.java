@@ -1,7 +1,9 @@
 package io.github.rivon0507.courier.envoi;
 
 import io.github.rivon0507.courier.IntegrationTest;
+import io.github.rivon0507.courier.TestUtils;
 import io.github.rivon0507.courier.auth.service.AuthService;
+import io.github.rivon0507.courier.common.api.PieceCreateRequest;
 import io.github.rivon0507.courier.common.persistence.UserRepository;
 import io.github.rivon0507.courier.envoi.persistence.EnvoiPieceRepository;
 import io.github.rivon0507.courier.envoi.persistence.EnvoiRepository;
@@ -14,14 +16,13 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.client.RestTestClient;
 
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @IntegrationTest
-public class PiecesControllerIT {
+public class EnvoiPiecesControllerIT {
 
     @Autowired
     private RestTestClient restClient;
@@ -36,13 +37,13 @@ public class PiecesControllerIT {
     @Autowired
     private EnvoiPieceRepository pieceRepository;
 
-    private AuthResult auth;
+    private TestUtils.AuthResult auth;
 
     @BeforeEach
     void setUp() {
         authService.register("user@example.com", "password", "User", "");
         authService.register("newUser@example.com", "password", "User", "");
-        auth = login();
+        auth = TestUtils.login(restClient);
     }
 
     @AfterEach
@@ -52,10 +53,10 @@ public class PiecesControllerIT {
 
     @Test
     void create_two_pieces_returns_200_and_inserts_in_db() {
-        long envoiId = createEnvoi();
+        long envoiId = TestUtils.createEnvoi(auth, restClient);
         assertThat(pieceRepository.count()).isZero();
-        restClient.post().uri("/workspaces/%d/envois/%d/pieces".formatted(auth.workspaceId, envoiId))
-                .header("Authorization", "Bearer %s".formatted(auth.accessToken))
+        restClient.post().uri("/workspaces/%d/envois/%d/pieces".formatted(auth.workspaceId(), envoiId))
+                .header("Authorization", "Bearer %s".formatted(auth.accessToken()))
                 .body("""
                         [
                           {"designation": "other", "quantite": 5},
@@ -76,10 +77,10 @@ public class PiecesControllerIT {
 
     @Test
     void create_empty_list_returns_200_and_inserts_nothing() {
-        long envoiId = createEnvoi();
+        long envoiId = TestUtils.createEnvoi(auth, restClient);
         long before = pieceRepository.count();
-        restClient.post().uri("/workspaces/%d/envois/%d/pieces".formatted(auth.workspaceId, envoiId))
-                .header("Authorization", "Bearer %s".formatted(auth.accessToken))
+        restClient.post().uri("/workspaces/%d/envois/%d/pieces".formatted(auth.workspaceId(), envoiId))
+                .header("Authorization", "Bearer %s".formatted(auth.accessToken()))
                 .body("[]")
                 .exchange()
                 .expectStatus().isOk().expectBody()
@@ -90,12 +91,12 @@ public class PiecesControllerIT {
 
     @Test
     void get_page_with_no_params_returns_only_pieces_of_that_envoi() {
-        long envoi1 = createEnvoiWithPieces(List.of(new PieceSeed("p1", 1)));
-        long envoi2 = createEnvoiWithPieces(List.of(new PieceSeed("p2", 1)));
+        long envoi1 = createEnvoiWithPieces(List.of(new PieceCreateRequest("p1", 1)));
+        long envoi2 = createEnvoiWithPieces(List.of(new PieceCreateRequest("p2", 1)));
         assertThat(envoiRepository.count()).isEqualTo(2);
         assertThat(pieceRepository.count()).isEqualTo(2);
-        restClient.get().uri("/workspaces/%d/envois/%d/pieces".formatted(auth.workspaceId, envoi1))
-                .header("Authorization", "Bearer %s".formatted(auth.accessToken))
+        restClient.get().uri("/workspaces/%d/envois/%d/pieces".formatted(auth.workspaceId(), envoi1))
+                .header("Authorization", "Bearer %s".formatted(auth.accessToken()))
                 .exchange().expectStatus().isOk()
                 .expectBody()
                 .jsonPath("$._items").isArray()
@@ -104,8 +105,8 @@ public class PiecesControllerIT {
                 .jsonPath("$._page").exists()
                 .jsonPath("$._sort").exists();
         restClient.get()
-                .uri("/workspaces/%d/envois/%d/pieces".formatted(auth.workspaceId, envoi2))
-                .header("Authorization", "Bearer %s".formatted(auth.accessToken))
+                .uri("/workspaces/%d/envois/%d/pieces".formatted(auth.workspaceId(), envoi2))
+                .header("Authorization", "Bearer %s".formatted(auth.accessToken()))
                 .exchange().expectStatus().isOk()
                 .expectBody()
                 .jsonPath("$._items.length()").isEqualTo(1)
@@ -114,13 +115,13 @@ public class PiecesControllerIT {
 
     @Test
     void update_two_distinct_pieces_returns_200_and_updates_in_db() {
-        long envoiId = createEnvoi();
+        long envoiId = TestUtils.createEnvoi(auth, restClient);
         PieceIds ids = createPieces(envoiId, List.of(
-                new PieceSeed("a", 1),
-                new PieceSeed("b", 2)
+                new PieceCreateRequest("a", 1),
+                new PieceCreateRequest("b", 2)
         ));
-        restClient.put().uri("/workspaces/%d/envois/%d/pieces".formatted(auth.workspaceId, envoiId))
-                .header("Authorization", "Bearer %s".formatted(auth.accessToken))
+        restClient.put().uri("/workspaces/%d/envois/%d/pieces".formatted(auth.workspaceId(), envoiId))
+                .header("Authorization", "Bearer %s".formatted(auth.accessToken()))
                 .body("""
                         [
                           {"id": %d, "designation": "a-up", "quantite": 10},
@@ -140,13 +141,13 @@ public class PiecesControllerIT {
 
     @Test
     void update_with_duplicate_piece_id_returns_400_DUPLICATE_PIECE_ID() {
-        long envoiId = createEnvoi();
+        long envoiId = TestUtils.createEnvoi(auth, restClient);
         PieceIds ids = createPieces(envoiId, List.of(
-                new PieceSeed("a", 1),
-                new PieceSeed("b", 2)
+                new PieceCreateRequest("a", 1),
+                new PieceCreateRequest("b", 2)
         ));
-        restClient.put().uri("/workspaces/%d/envois/%d/pieces".formatted(auth.workspaceId, envoiId))
-                .header("Authorization", "Bearer %s".formatted(auth.accessToken))
+        restClient.put().uri("/workspaces/%d/envois/%d/pieces".formatted(auth.workspaceId(), envoiId))
+                .header("Authorization", "Bearer %s".formatted(auth.accessToken()))
                 .body("""
                         [
                           {"id": %d, "designation": "x", "quantite": 10},
@@ -160,13 +161,13 @@ public class PiecesControllerIT {
 
     @Test
     void update_with_one_valid_and_one_invalid_piece_returns_400() {
-        long envoiId = createEnvoi();
+        long envoiId = TestUtils.createEnvoi(auth, restClient);
         PieceIds ids = createPieces(envoiId, List.of(
-                new PieceSeed("a", 1),
-                new PieceSeed("b", 2)
+                new PieceCreateRequest("a", 1),
+                new PieceCreateRequest("b", 2)
         ));
-        restClient.put().uri("/workspaces/%d/envois/%d/pieces".formatted(auth.workspaceId, envoiId))
-                .header("Authorization", "Bearer %s".formatted(auth.accessToken))
+        restClient.put().uri("/workspaces/%d/envois/%d/pieces".formatted(auth.workspaceId(), envoiId))
+                .header("Authorization", "Bearer %s".formatted(auth.accessToken()))
                 .body("""
                         [
                           {"id": %d, "designation": "a-up", "quantite": 10},
@@ -179,71 +180,60 @@ public class PiecesControllerIT {
 
     @Test
     void delete_nonexistent_piece_returns_204() {
-        long envoiId = createEnvoi();
+        long envoiId = TestUtils.createEnvoi(auth, restClient);
         createPieces(envoiId, List.of(
-                new PieceSeed("a", 1),
-                new PieceSeed("b", 2)
+                new PieceCreateRequest("a", 1),
+                new PieceCreateRequest("b", 2)
         ));
 
         long before = pieceRepository.count();
-        restClient.delete().uri("/workspaces/%d/envois/%d/pieces?ids=%d".formatted(auth.workspaceId, envoiId, 999))
-                .header("Authorization", "Bearer %s".formatted(auth.accessToken))
+        restClient.delete().uri("/workspaces/%d/envois/%d/pieces?ids=%d".formatted(auth.workspaceId(), envoiId, 999))
+                .header("Authorization", "Bearer %s".formatted(auth.accessToken()))
                 .exchange().expectStatus().isNoContent();
         assertThat(pieceRepository.count()).isEqualTo(before);
     }
 
     @Test
     void delete_existing_piece_returns_204_and_deletes_from_db() {
-        long envoiId = createEnvoi();
+        long envoiId = TestUtils.createEnvoi(auth, restClient);
 
         PieceIds ids = createPieces(envoiId, List.of(
-                new PieceSeed("a", 1),
-                new PieceSeed("b", 2)
+                new PieceCreateRequest("a", 1),
+                new PieceCreateRequest("b", 2)
         ));
         assertThat(pieceRepository.count()).isEqualTo(2);
 
-        restClient.delete().uri("/workspaces/%d/envois/%d/pieces?ids=%d".formatted(auth.workspaceId, envoiId, ids.firstId))
-                .header("Authorization", "Bearer %s".formatted(auth.accessToken))
+        restClient.delete().uri("/workspaces/%d/envois/%d/pieces?ids=%d".formatted(auth.workspaceId(), envoiId, ids.firstId))
+                .header("Authorization", "Bearer %s".formatted(auth.accessToken()))
                 .exchange().expectStatus().isNoContent();
         assertThat(pieceRepository.existsById(ids.firstId)).isFalse();
         assertThat(pieceRepository.count()).isEqualTo(1);
     }
 
-    private long createEnvoi() {
-        AtomicReference<Integer> envoiId = new AtomicReference<>();
-        restClient.post().uri("/workspaces/%d/envois".formatted(auth.workspaceId))
-                .header("Authorization", "Bearer %s".formatted(auth.accessToken))
-                .body("{\"dateEnvoi\": \"2025-12-25\", \"destinataire\": \"dest\"}")
-                .exchangeSuccessfully()
-                .expectBody()
-                .jsonPath("$.envoi.id").value(envoiId::set);
-        return envoiId.get();
-    }
-
-    private long createEnvoiWithPieces(List<PieceSeed> pieces) {
+    private long createEnvoiWithPieces(List<PieceCreateRequest> pieces) {
         String piecesJson = pieces.stream()
-                .map(p -> "{\"designation\": \"%s\", \"quantite\": %d}".formatted(p.designation, p.quantite))
+                .map(p -> "{\"designation\": \"%s\", \"quantite\": %d}".formatted(p.designation(), p.quantite()))
                 .collect(Collectors.joining(",", "[", "]"));
 
         AtomicReference<Integer> envoiId = new AtomicReference<>();
-        restClient.post().uri("/workspaces/%d/envois".formatted(auth.workspaceId))
-                .header("Authorization", "Bearer %s".formatted(auth.accessToken))
+        restClient.post().uri("/workspaces/%d/envois".formatted(auth.workspaceId()))
+                .header("Authorization", "Bearer %s".formatted(auth.accessToken()))
                 .body("{\"dateEnvoi\": \"2025-12-25\", \"destinataire\": \"dest\", \"pieces\": %s}".formatted(piecesJson))
                 .exchangeSuccessfully().expectBody().jsonPath("$.envoi.id").value(envoiId::set);
 
         return envoiId.get();
     }
 
-    private PieceIds createPieces(long envoiId, List<PieceSeed> pieces) {
+    private PieceIds createPieces(long envoiId, List<PieceCreateRequest> pieces) {
         String body = pieces.stream()
-                .map(p -> "{\"designation\": \"%s\", \"quantite\": %d}".formatted(p.designation, p.quantite))
+                .map(p -> "{\"designation\": \"%s\", \"quantite\": %d}".formatted(p.designation(), p.quantite()))
                 .collect(Collectors.joining(",", "[", "]"));
 
         AtomicReference<Integer> id1 = new AtomicReference<>();
         AtomicReference<Integer> id2 = new AtomicReference<>();
 
-        restClient.post().uri("/workspaces/%d/envois/%d/pieces".formatted(auth.workspaceId, envoiId))
-                .header("Authorization", "Bearer %s".formatted(auth.accessToken))
+        restClient.post().uri("/workspaces/%d/envois/%d/pieces".formatted(auth.workspaceId(), envoiId))
+                .header("Authorization", "Bearer %s".formatted(auth.accessToken()))
                 .body(body)
                 .exchangeSuccessfully()
                 .expectBody()
@@ -251,26 +241,6 @@ public class PiecesControllerIT {
                 .jsonPath("$[1].id").value(id2::set);
 
         return new PieceIds(id1.get(), id2.get());
-    }
-
-    private AuthResult login() {
-        AtomicReference<String> accessToken = new AtomicReference<>();
-        AtomicReference<Integer> workspaceId = new AtomicReference<>();
-        restClient.post()
-                .uri("/auth/login")
-                .body(Map.of("email", "user@example.com", "password", "password"))
-                .exchangeSuccessfully()
-                .expectBody()
-                .jsonPath("$.accessToken").value(accessToken::set)
-                .jsonPath("$.workspaceId").value(workspaceId::set);
-
-        return new AuthResult(accessToken.get(), workspaceId.get());
-    }
-
-    record AuthResult(String accessToken, long workspaceId) {
-    }
-
-    record PieceSeed(String designation, int quantite) {
     }
 
     record PieceIds(long firstId, long secondId) {
@@ -285,18 +255,18 @@ public class PiecesControllerIT {
                     .orElseThrow()
                     .getDefaultWorkspace()
                     .getId();
-            long envoiId = createEnvoi();
+            long envoiId = TestUtils.createEnvoi(auth, restClient);
             restClient.get().uri("/workspaces/%d/envois/%d/pieces".formatted(notMyWorkspace, envoiId))
-                    .header("Authorization", "Bearer %s".formatted(auth.accessToken))
+                    .header("Authorization", "Bearer %s".formatted(auth.accessToken()))
                     .exchange().expectStatus().isNotFound();
         }
 
         @Test
         void request_with_nonexistent_workspace_id_returns_404() {
             long nonexistentWorkspace = 10_000L;
-            long envoiId = createEnvoi();
+            long envoiId = TestUtils.createEnvoi(auth, restClient);
             restClient.get().uri("/workspaces/%d/envois/%d/pieces".formatted(nonexistentWorkspace, envoiId))
-                    .header("Authorization", "Bearer %s".formatted(auth.accessToken))
+                    .header("Authorization", "Bearer %s".formatted(auth.accessToken()))
                     .exchange().expectStatus().isNotFound();
         }
     }

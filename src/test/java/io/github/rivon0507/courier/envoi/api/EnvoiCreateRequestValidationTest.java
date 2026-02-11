@@ -1,5 +1,6 @@
 package io.github.rivon0507.courier.envoi.api;
 
+import io.github.rivon0507.courier.common.api.PieceCreateRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
@@ -36,9 +37,9 @@ class EnvoiCreateRequestValidationTest {
     Stream<DynamicTest> failing() {
         return Stream.of(
                 new Case("missing dateEnvoi", dtoNoPiece("ref", "obs", null)),
-                new Case("missing destinataire", dto("ref", null, "obs", "2025-12-25", List.of(piece("", 1)))),
-                new Case("blank destinataire", dto("ref", "", "obs", "2025-12-25", List.of(piece("", 1)))),
-                new Case("missing piece designation", dto("ref", "dest", "obs", "2025-12-25", List.of(piece("", 1)))),
+                new Case("missing destinataire", dto("ref", null, "obs", "2025-12-25", List.of(piece("design", 1)))),
+                new Case("blank destinataire", dto("ref", "", "obs", "2025-12-25", List.of(piece("design", 1)))),
+                new Case("blank piece designation", dto("ref", "dest", "obs", "2025-12-25", List.of(piece("", 1)))),
                 new Case("negative piece quantite", dto("ref", "dest", "obs", "2025-12-25", List.of(piece("des", -1)))),
                 new Case("piece with zero quantite", dto("ref", "dest", "obs", "2025-12-25", List.of(piece("des", 0)))),
                 new Case("designation with control characters", dto("ref", "dest", "obs", "2025-12-25", List.of(piece("de\0", 2)))),

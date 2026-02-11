@@ -1,5 +1,6 @@
 package io.github.rivon0507.courier.envoi;
 
+import io.github.rivon0507.courier.common.annotation.CurrentUserId;
 import io.github.rivon0507.courier.common.pagination.PagedResponse;
 import io.github.rivon0507.courier.envoi.api.EnvoiCreateRequest;
 import io.github.rivon0507.courier.envoi.api.EnvoiDetailsResponse;
@@ -25,9 +26,10 @@ public class EnvoiController {
     @PostMapping
     public ResponseEntity<EnvoiDetailsResponse> create(
             @PathVariable Long workspaceId,
-            @Valid @RequestBody EnvoiCreateRequest requestBody) {
+            @Valid @RequestBody EnvoiCreateRequest requestBody,
+            @CurrentUserId Long userId) {
 
-        EnvoiDetailsResponse created = envoiService.create(requestBody, workspaceId);
+        EnvoiDetailsResponse created = envoiService.create(requestBody, workspaceId, userId);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{envoiId}")
                 .buildAndExpand(created.envoi().id())
@@ -37,30 +39,38 @@ public class EnvoiController {
     }
 
     @GetMapping("/{envoiId}")
-    public ResponseEntity<EnvoiResponse> get(@PathVariable Long envoiId, @PathVariable Long workspaceId) {
-        return ResponseEntity.ok(envoiService.get(envoiId, workspaceId));
+    public ResponseEntity<EnvoiResponse> get(
+            @PathVariable Long envoiId,
+            @PathVariable Long workspaceId,
+            @CurrentUserId Long userId) {
+        return ResponseEntity.ok(envoiService.get(envoiId, workspaceId, userId));
     }
 
     @GetMapping
     public ResponseEntity<PagedResponse<EnvoiResponse>> getPage(
             @PageableDefault(sort = "dateEnvoi") Pageable page,
-            @PathVariable Long workspaceId) {
+            @PathVariable Long workspaceId,
+            @CurrentUserId Long userId) {
 
-        return ResponseEntity.ok(envoiService.getPage(page, workspaceId));
+        return ResponseEntity.ok(envoiService.getPage(page, workspaceId, userId));
     }
 
     @PutMapping("/{envoiId}")
     public ResponseEntity<EnvoiResponse> update(
             @PathVariable Long envoiId,
             @Valid @RequestBody EnvoiUpdateRequest requestBody,
-            @PathVariable Long workspaceId) {
+            @PathVariable Long workspaceId,
+            @CurrentUserId Long userId) {
 
-        return ResponseEntity.ok(envoiService.update(envoiId, requestBody, workspaceId));
+        return ResponseEntity.ok(envoiService.update(envoiId, requestBody, workspaceId, userId));
     }
 
     @DeleteMapping("/{envoiId}")
-    public ResponseEntity<Void> delete(@PathVariable Long envoiId, @PathVariable Long workspaceId) {
-        envoiService.delete(envoiId, workspaceId);
+    public ResponseEntity<Void> delete(
+            @PathVariable Long envoiId,
+            @PathVariable Long workspaceId,
+            @CurrentUserId Long userId) {
+        envoiService.delete(envoiId, workspaceId, userId);
         return ResponseEntity.noContent().build();
     }
 }

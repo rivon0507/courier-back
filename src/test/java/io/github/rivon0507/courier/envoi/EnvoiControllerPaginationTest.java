@@ -37,7 +37,7 @@ class EnvoiControllerPaginationSliceTest {
     void noPageNumber_defaultsToPage0() throws Exception {
         long workspaceId = 1L;
 
-        when(envoiService.getPage(any(Pageable.class), eq(workspaceId)))
+        when(envoiService.getPage(any(Pageable.class), eq(workspaceId), any()))
                 .thenReturn(null);
 
         mockMvc.perform(get("/workspaces/1/envois", workspaceId))
@@ -51,7 +51,7 @@ class EnvoiControllerPaginationSliceTest {
     void noPageSize_defaultsToSize10() throws Exception {
         long workspaceId = 1L;
 
-        when(envoiService.getPage(any(Pageable.class), eq(workspaceId)))
+        when(envoiService.getPage(any(Pageable.class), eq(workspaceId), any()))
                 .thenReturn(null);
 
         mockMvc.perform(get("/workspaces/1/envois", workspaceId))
@@ -65,7 +65,7 @@ class EnvoiControllerPaginationSliceTest {
     void noSortKey_defaultsToSortByDateEnvoi() throws Exception {
         long workspaceId = 1L;
 
-        when(envoiService.getPage(any(Pageable.class), eq(workspaceId)))
+        when(envoiService.getPage(any(Pageable.class), eq(workspaceId), any()))
                 .thenReturn(null);
 
         mockMvc.perform(get("/workspaces/1/envois", workspaceId))
@@ -81,7 +81,7 @@ class EnvoiControllerPaginationSliceTest {
     void noSortDirection_defaultsToAscending() throws Exception {
         long workspaceId = 1L;
 
-        when(envoiService.getPage(any(Pageable.class), eq(workspaceId)))
+        when(envoiService.getPage(any(Pageable.class), eq(workspaceId), any()))
                 .thenReturn(null);
 
         mockMvc.perform(get("/workspaces/1/envois", workspaceId))
@@ -98,7 +98,7 @@ class EnvoiControllerPaginationSliceTest {
     void getPage_returnsPagedResponseShape_withItems() throws Exception {
         long workspaceId = 1L;
 
-        when(envoiService.getPage(any(Pageable.class), eq(workspaceId))).thenAnswer(invocation -> {
+        when(envoiService.getPage(any(Pageable.class), eq(workspaceId), any())).thenAnswer(invocation -> {
             Pageable p = invocation.getArgument(0, Pageable.class);
             Sort.Order order = p.getSort().stream().findFirst().orElseThrow();
 
@@ -122,7 +122,7 @@ class EnvoiControllerPaginationSliceTest {
 
     private Pageable capturePageable(long workspaceId) {
         ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
-        verify(envoiService).getPage(captor.capture(), eq(workspaceId));
+        verify(envoiService).getPage(captor.capture(), eq(workspaceId), any());
         return captor.getValue();
     }
 }

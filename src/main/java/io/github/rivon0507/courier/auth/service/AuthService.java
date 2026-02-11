@@ -268,7 +268,8 @@ public class AuthService {
                 .subject(principal.email())
                 .claim("scope", scope)
                 .claim("roles", new String[]{principal.role()})
-                .claim("name", principal.displayName());
+                .claim("name", principal.displayName())
+                .claim("userId", principal.id());
 
         return jwtEncoder.encode(JwtEncoderParameters.from(claims.build()));
     }

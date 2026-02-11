@@ -1,9 +1,9 @@
-package io.github.rivon0507.courier.envoi;
+package io.github.rivon0507.courier.reception;
 
 import io.github.rivon0507.courier.common.pagination.PageInfo;
 import io.github.rivon0507.courier.common.pagination.PagedResponse;
 import io.github.rivon0507.courier.common.pagination.SortInfo;
-import io.github.rivon0507.courier.envoi.api.EnvoiResponse;
+import io.github.rivon0507.courier.reception.api.ReceptionResponse;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,24 +23,24 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(EnvoiController.class)
+@WebMvcTest(ReceptionController.class)
 @AutoConfigureMockMvc(addFilters = false)
-public class EnvoiControllerPaginationTest {
+public class ReceptionControllerPaginationTest {
 
     @Autowired
     MockMvc mockMvc;
 
     @MockitoBean
-    EnvoiService envoiService;
+    ReceptionService receptionService;
 
     @Test
     void noPageNumber_defaultsToPage0() throws Exception {
         long workspaceId = 1L;
 
-        when(envoiService.getPage(any(Pageable.class), eq(workspaceId), any()))
+        when(receptionService.getPage(any(Pageable.class), eq(workspaceId), any()))
                 .thenReturn(null);
 
-        mockMvc.perform(get("/workspaces/1/envois", workspaceId))
+        mockMvc.perform(get("/workspaces/1/receptions", workspaceId))
                 .andExpect(status().isOk());
 
         Pageable pageable = capturePageable(workspaceId);
@@ -51,10 +51,10 @@ public class EnvoiControllerPaginationTest {
     void noPageSize_defaultsToSize10() throws Exception {
         long workspaceId = 1L;
 
-        when(envoiService.getPage(any(Pageable.class), eq(workspaceId), any()))
+        when(receptionService.getPage(any(Pageable.class), eq(workspaceId), any()))
                 .thenReturn(null);
 
-        mockMvc.perform(get("/workspaces/1/envois", workspaceId))
+        mockMvc.perform(get("/workspaces/1/receptions", workspaceId))
                 .andExpect(status().isOk());
 
         Pageable pageable = capturePageable(workspaceId);
@@ -62,18 +62,18 @@ public class EnvoiControllerPaginationTest {
     }
 
     @Test
-    void noSortKey_defaultsToSortByDateEnvoi() throws Exception {
+    void noSortKey_defaultsToSortByDateReception() throws Exception {
         long workspaceId = 1L;
 
-        when(envoiService.getPage(any(Pageable.class), eq(workspaceId), any()))
+        when(receptionService.getPage(any(Pageable.class), eq(workspaceId), any()))
                 .thenReturn(null);
 
-        mockMvc.perform(get("/workspaces/1/envois", workspaceId))
+        mockMvc.perform(get("/workspaces/1/receptions", workspaceId))
                 .andExpect(status().isOk());
 
         Pageable pageable = capturePageable(workspaceId);
 
-        Sort.Order order = pageable.getSort().getOrderFor("dateEnvoi");
+        Sort.Order order = pageable.getSort().getOrderFor("dateReception");
         assertThat(order).isNotNull();
     }
 
@@ -81,15 +81,15 @@ public class EnvoiControllerPaginationTest {
     void noSortDirection_defaultsToAscending() throws Exception {
         long workspaceId = 1L;
 
-        when(envoiService.getPage(any(Pageable.class), eq(workspaceId), any()))
+        when(receptionService.getPage(any(Pageable.class), eq(workspaceId), any()))
                 .thenReturn(null);
 
-        mockMvc.perform(get("/workspaces/1/envois", workspaceId))
+        mockMvc.perform(get("/workspaces/1/receptions", workspaceId))
                 .andExpect(status().isOk());
 
         Pageable pageable = capturePageable(workspaceId);
 
-        Sort.Order order = pageable.getSort().getOrderFor("dateEnvoi");
+        Sort.Order order = pageable.getSort().getOrderFor("dateReception");
         assertThat(order).isNotNull();
         assertThat(order.getDirection()).isEqualTo(Sort.Direction.ASC);
     }
@@ -98,31 +98,31 @@ public class EnvoiControllerPaginationTest {
     void getPage_returnsPagedResponseShape_withItems() throws Exception {
         long workspaceId = 1L;
 
-        when(envoiService.getPage(any(Pageable.class), eq(workspaceId), any())).thenAnswer(invocation -> {
+        when(receptionService.getPage(any(Pageable.class), eq(workspaceId), any())).thenAnswer(invocation -> {
             Pageable p = invocation.getArgument(0, Pageable.class);
             Sort.Order order = p.getSort().stream().findFirst().orElseThrow();
 
             return new PagedResponse<>(
-                    List.of(new EnvoiResponse(1L, "REF", "dest", null, LocalDate.of(2026, 2, 10))),
+                    List.of(new ReceptionResponse(1L, "REF", "dest", LocalDate.of(2026, 2, 10))),
                     new PageInfo(p.getPageNumber(), p.getPageSize(), 0, 0),
                     new SortInfo(order)
             );
         });
 
-        mockMvc.perform(get("/workspaces/1/envois", workspaceId))
+        mockMvc.perform(get("/workspaces/1/receptions", workspaceId))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith("application/json"))
                 .andExpect(jsonPath("$._items").isArray())
                 .andExpect(jsonPath("$._page.pageIndex").value(0))
                 .andExpect(jsonPath("$._page.pageSize").value(10))
-                .andExpect(jsonPath("$._sort.key").value("dateEnvoi"))
+                .andExpect(jsonPath("$._sort.key").value("dateReception"))
                 .andExpect(jsonPath("$._sort.direction").value("ASC"));
     }
 
 
     private Pageable capturePageable(long workspaceId) {
         ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
-        verify(envoiService).getPage(captor.capture(), eq(workspaceId), any());
+        verify(receptionService).getPage(captor.capture(), eq(workspaceId), any());
         return captor.getValue();
     }
 }
